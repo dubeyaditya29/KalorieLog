@@ -28,24 +28,47 @@ A mobile calorie counter app that uses AI to analyze food photos and track your 
 
 ## Setup Instructions
 
-### 1. Install Dependencies
+### For New Users (First Time Setup)
+
+If you're cloning this repository for the first time, follow these steps:
+
+#### 1. Clone the Repository
+
+```bash
+git clone https://github.com/dubeyaditya29/biteLog.git
+cd biteLog
+```
+
+#### 2. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Configure Environment Variables
+#### 3. Get a Gemini API Key
 
-The `.env` file has already been created with your API key. If you need to change it:
+1. Go to [Google AI Studio](https://aistudio.google.com/apikey)
+2. Sign in with your Google account
+3. Click "Create API Key"
+4. Copy the generated API key
+
+#### 4. Configure Environment Variables
+
+Create a `.env` file in the root directory:
 
 ```bash
-# Edit .env file
+cp .env.example .env
+```
+
+Then edit the `.env` file and add your API key:
+
+```bash
 EXPO_PUBLIC_GEMINI_API_KEY=your_api_key_here
 ```
 
-**Important**: Never commit the `.env` file to version control!
+**Important**: Never commit the `.env` file to version control! It's already in `.gitignore`.
 
-### 3. Start the Development Server
+#### 5. Start the Development Server
 
 ```bash
 npx expo start
@@ -53,11 +76,22 @@ npx expo start
 
 This will start the Metro bundler and show a QR code in your terminal.
 
-### 4. Run on Your Phone
+#### 6. Install Expo Go on Your Phone
 
+- **iOS**: Download from [App Store](https://apps.apple.com/app/expo-go/id982107779)
+- **Android**: Download from [Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent)
+
+#### 7. Run the App on Your Phone
+
+**Option 1: Scan QR Code**
 1. Open the **Expo Go** app on your phone
 2. Scan the QR code from your terminal
 3. The app will load on your device
+
+**Option 2: Enter URL Manually**
+1. Open **Expo Go** app
+2. Enter the URL shown in terminal (e.g., `exp://192.168.1.14:8081`)
+3. Tap "Connect"
 
 **Note**: Make sure your phone and computer are on the same Wi-Fi network.
 
