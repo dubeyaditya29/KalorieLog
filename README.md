@@ -1,174 +1,130 @@
-# BiteLog 🍽️
+# BiteLog - Calorie Tracking App
 
-A mobile calorie counter app that uses AI to analyze food photos and track your daily calorie intake.
+A React Native mobile application for tracking calories using AI-powered food image analysis.
 
-## Features
-
-- 📸 **Photo-based Calorie Tracking**: Take photos of your meals and get instant calorie estimates
-- 🤖 **AI-Powered Analysis**: Uses Google's Gemini Vision API to identify food items and estimate calories
-- 🍳 **Meal Categories**: Track breakfast, lunch, dinner, and snacks separately
-- 📊 **Daily Summary**: View your total calories and breakdown by meal type
-- 💾 **Local Storage**: All data stays private on your device
-- 🎨 **Beautiful UI**: Modern, intuitive interface with color-coded meal types
-
-## Tech Stack
-
-- **Framework**: React Native with Expo
-- **AI**: Google Gemini Vision API
-- **Storage**: AsyncStorage (local device storage)
-- **Navigation**: React Navigation
-- **Camera**: Expo Camera & Image Picker
-
-## Prerequisites
-
-- Node.js (v20.16.0 or higher recommended)
-- npm or yarn
-- Expo Go app on your phone ([iOS](https://apps.apple.com/app/expo-go/id982107779) | [Android](https://play.google.com/store/apps/details?id=host.exp.exponent))
-- Google Gemini API key ([Get one here](https://makersuite.google.com/app/apikey))
-
-## Setup Instructions
-
-### For New Users (First Time Setup)
-
-If you're cloning this repository for the first time, follow these steps:
-
-#### 1. Clone the Repository
-
-```bash
-git clone https://github.com/dubeyaditya29/biteLog.git
-cd biteLog
-```
-
-#### 2. Install Dependencies
-
-```bash
-npm install
-```
-
-#### 3. Get a Gemini API Key
-
-1. Go to [Google AI Studio](https://aistudio.google.com/apikey)
-2. Sign in with your Google account
-3. Click "Create API Key"
-4. Copy the generated API key
-
-#### 4. Configure Environment Variables
-
-Create a `.env` file in the root directory:
-
-```bash
-cp .env.example .env
-```
-
-Then edit the `.env` file and add your API key:
-
-```bash
-EXPO_PUBLIC_GEMINI_API_KEY=your_api_key_here
-```
-
-**Important**: Never commit the `.env` file to version control! It's already in `.gitignore`.
-
-#### 5. Start the Development Server
-
-```bash
-npx expo start
-```
-
-This will start the Metro bundler and show a QR code in your terminal.
-
-#### 6. Install Expo Go on Your Phone
-
-- **iOS**: Download from [App Store](https://apps.apple.com/app/expo-go/id982107779)
-- **Android**: Download from [Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent)
-
-#### 7. Run the App on Your Phone
-
-**Option 1: Scan QR Code**
-1. Open the **Expo Go** app on your phone
-2. Scan the QR code from your terminal
-3. The app will load on your device
-
-**Option 2: Enter URL Manually**
-1. Open **Expo Go** app
-2. Enter the URL shown in terminal (e.g., `exp://192.168.1.14:8081`)
-3. Tap "Connect"
-
-**Note**: Make sure your phone and computer are on the same Wi-Fi network.
-
-## How to Use
-
-1. **Launch the app** - You'll see the home screen with your daily calorie summary
-2. **Add a meal** - Tap one of the meal type buttons (Breakfast, Lunch, Dinner, or Snack)
-3. **Take a photo** - Use your camera or select from gallery
-4. **Analyze** - Tap "Analyze Food" to let AI identify the food and estimate calories
-5. **Save** - Review the results and tap "Save Meal" to log it
-6. **Track progress** - Return to home screen to see your updated daily total
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 biteLog/
+├── App.js                    # Main application entry point
+├── babel.config.js           # Babel configuration
+├── package.json              # Dependencies and scripts
+├── app.json                  # Expo configuration
+│
 ├── src/
-│   ├── components/         # Reusable UI components
-│   │   ├── CalorieCounter.js
-│   │   └── MealCard.js
-│   ├── screens/           # App screens
-│   │   ├── HomeScreen.js
-│   │   └── AddMealScreen.js
-│   ├── services/          # Business logic
-│   │   ├── geminiService.js
-│   │   └── storageService.js
-│   └── styles/            # Theme and styles
-│       ├── theme.js
-│       └── globalStyles.js
-├── App.js                 # Main app entry point
-├── .env                   # Environment variables (DO NOT COMMIT)
-└── package.json
+│   ├── components/           # Reusable UI components
+│   │   ├── index.js          # Barrel export for components
+│   │   ├── common/           # Shared components
+│   │   │   └── CircularProgress.js
+│   │   ├── home/             # Home screen specific components
+│   │   │   ├── CalorieCounter.js
+│   │   │   ├── MacroRings.js
+│   │   │   └── MacronutrientBar.js
+│   │   └── meal/             # Meal-related components
+│   │       └── MealCard.js
+│   │
+│   ├── screens/              # App screens
+│   │   ├── index.js          # Barrel export for screens
+│   │   ├── auth/             # Authentication screens
+│   │   │   ├── LoginScreen.js
+│   │   │   ├── OnboardingScreen.js
+│   │   │   └── VerifyEmailScreen.js
+│   │   ├── home/             # Home screen
+│   │   │   └── HomeScreen.js
+│   │   ├── meal/             # Meal-related screens
+│   │   │   └── AddMealScreen.js
+│   │   └── profile/          # Profile screen
+│   │       └── ProfileScreen.js
+│   │
+│   ├── services/             # Business logic and API services
+│   │   ├── index.js          # Barrel export for services
+│   │   ├── api/              # External API integrations
+│   │   │   ├── supabase.js   # Supabase client
+│   │   │   ├── authService.js
+│   │   │   ├── geminiService.js
+│   │   │   ├── mealService.js
+│   │   │   └── profileService.js
+│   │   └── storageService.js # Local storage utilities
+│   │
+│   ├── contexts/             # React Context providers
+│   │   └── AuthContext.js
+│   │
+│   ├── styles/               # Global styles and theming
+│   │   ├── theme.js          # Color palette, spacing, fonts
+│   │   └── globalStyles.js   # Common button styles, etc.
+│   │
+│   ├── utils/                # Utility functions
+│   │   └── bmiCalculator.js
+│   │
+│   ├── hooks/                # Custom React hooks (future)
+│   │
+│   └── constants/            # App constants (future)
+│
+└── supabase_*.sql            # Database migration scripts
 ```
 
-## API Key Security
+## 🚀 Getting Started
 
-⚠️ **Important Security Notes**:
+### Prerequisites
 
-- Your API key is stored in `.env` which is gitignored
-- Never commit `.env` to version control
-- Don't share your repository publicly with the API key exposed
-- For production, consider using a backend proxy to hide the API key
+- Node.js (v20+)
+- Expo CLI (`npm install -g expo-cli`)
+- Expo Go app on your mobile device
 
-## Troubleshooting
+### Installation
 
-### Camera not working
-- Make sure you granted camera permissions when prompted
-- On iOS, check Settings > BiteLog > Camera
-- On Android, check App Settings > Permissions > Camera
+```bash
+# Install dependencies
+npm install
 
-### API errors
-- Verify your Gemini API key is correct in `.env`
-- Check your internet connection
-- Make sure the API key has not exceeded its quota
+# Start the development server
+npx expo start --clear
+```
 
-### App won't load
-- Make sure your phone and computer are on the same Wi-Fi
-- Try restarting the Expo dev server
-- Clear Expo cache: `npx expo start -c`
+### Environment Variables
 
-## Future Enhancements
+Create a `.env` file with:
 
-- 📈 Weekly/monthly calorie trends
-- 🎯 Custom calorie goals
-- ☁️ Cloud sync across devices
-- 🏃 Exercise tracking
-- 📱 Widget support
-- 🌙 Dark mode
+```
+EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
+```
 
-## License
+## 🏗️ Architecture
 
-MIT
+### Folder Guidelines
 
-## Support
+- **components/**: Reusable UI components. Organize by feature (home, meal) or type (common).
+- **screens/**: Full-page components that represent app screens. One export per screen.
+- **services/**: All business logic, API calls, and data manipulation.
+- **contexts/**: React Context providers for global state.
+- **styles/**: Theming and global styles only. Component-specific styles stay in components.
+- **utils/**: Pure utility functions with no side effects.
+- **hooks/**: Custom React hooks (useAuth, useMeals, etc.).
 
-For issues or questions, please open an issue on GitHub.
+### Naming Conventions
 
----
+- Components: PascalCase, e.g., `MealCard.js`
+- Services: camelCase, e.g., `mealService.js`
+- Screens: PascalCase + Screen suffix, e.g., `HomeScreen.js`
 
-Built with ❤️ using React Native and Google Gemini AI
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Follow the folder structure guidelines
+4. Write clean, documented code
+5. Submit a pull request
+
+## 📱 Features
+
+- 📸 AI-powered food image analysis using Google Gemini
+- 📊 Calorie and macronutrient tracking
+- 🎯 Daily calorie goals based on BMI
+- 👤 User profiles with health metrics
+- 🔐 Secure authentication with Supabase
+
+## 📄 License
+
+MIT License

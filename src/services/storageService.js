@@ -1,33 +1,45 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from './api/supabase';
+import {
+    saveMealToCloud,
+    getTodaysMealsFromCloud,
+    getTotalCaloriesByDateFromCloud,
+    deleteMealFromCloud,
+    getUserMeals
+} from './api/mealService';
 
 const STORAGE_KEY = '@biteLog_meals';
 
 /**
- * Meal entry structure:
- * {
- *   id: string,
- *   timestamp: number,
- *   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack',
- *   calories: number,
- *   description: string,
- *   items: string[]
- * }
+ * Get current user ID from Supabase
  */
+const getUserId = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id;
+};
 
 /**
- * Save a new meal entry
+ * Save a new meal entry (to Supabase)
  */
 export const saveMeal = async (mealData) => {
     try {
-        const meals = await getAllMeals();
-        const newMeal = {
-            id: Date.now().toString(),
-            timestamp: Date.now(),
-            ...mealData,
-        };
-        meals.push(newMeal);
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(meals));
-        return newMeal;
+        const userId = await getUserId();
+
+        if (!userId) {
+            throw new Error('User not authenticated');
+        }
+
+        console.log('Saving meal to Supabase...', mealData);
+
+        const { data, error } = await saveMealToCloud(userId, mealData);
+
+        if (error) {
+            console.error('Supabase save error:', error);
+            throw error;
+        }
+
+        console.log('Meal saved successfully:', data);
+        return data;
     } catch (error) {
         console.error('Error saving meal:', error);
         throw new Error('Failed to save meal');
@@ -35,12 +47,35 @@ export const saveMeal = async (mealData) => {
 };
 
 /**
- * Get all meals
+ * Get all meals (from Supabase)
  */
 export const getAllMeals = async () => {
     try {
-        const mealsJson = await AsyncStorage.getItem(STORAGE_KEY);
-        return mealsJson ? JSON.parse(mealsJson) : [];
+        const userId = await getUserId();
+
+        if (!userId) {
+            return [];
+        }
+
+        const { data, error } = await getUserMeals(userId);
+
+        if (error) {
+            console.error('Error getting meals:', error);
+            return [];
+        }
+
+        // Convert Supabase format to app format
+        return data.map(meal => ({
+            id: meal.id,
+            timestamp: new Date(meal.logged_at).getTime(),
+            mealType: meal.meal_type,
+            calories: meal.calories,
+            description: meal.description,
+            items: meal.items || [],
+            protein: meal.protein_g,
+            carbs: meal.carbs_g,
+            fat: meal.fat_g,
+        }));
     } catch (error) {
         console.error('Error getting meals:', error);
         return [];
@@ -48,40 +83,103 @@ export const getAllMeals = async () => {
 };
 
 /**
- * Get meals for a specific date
+ * Get today's meals (from Supabase)
  */
-export const getMealsByDate = async (date) => {
+export const getTodaysMeals = async () => {
     try {
-        const meals = await getAllMeals();
-        const startOfDay = new Date(date);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(date);
-        endOfDay.setHours(23, 59, 59, 999);
+        const userId = await getUserId();
 
-        return meals.filter(
-            (meal) =>
-                meal.timestamp >= startOfDay.getTime() &&
-                meal.timestamp <= endOfDay.getTime()
-        );
+        if (!userId) {
+            return [];
+        }
+
+        const { data, error } = await getTodaysMealsFromCloud(userId);
+
+        if (error) {
+            console.error('Error getting today meals:', error);
+            return [];
+        }
+
+        // Convert Supabase format to app format
+        return data.map(meal => ({
+            id: meal.id,
+            timestamp: new Date(meal.logged_at).getTime(),
+            mealType: meal.meal_type,
+            calories: meal.calories,
+            description: meal.description,
+            items: meal.items || [],
+            protein: meal.protein_g,
+            carbs: meal.carbs_g,
+            fat: meal.fat_g,
+        }));
     } catch (error) {
-        console.error('Error getting meals by date:', error);
+        console.error('Error getting today meals:', error);
         return [];
     }
 };
 
 /**
- * Get today's meals
+ * Calculate total calories for a specific date (from Supabase)
  */
-export const getTodaysMeals = async () => {
-    return getMealsByDate(new Date());
+export const getTotalCaloriesByDate = async (date) => {
+    try {
+        const userId = await getUserId();
+
+        if (!userId) {
+            return 0;
+        }
+
+        const { data, error } = await getTotalCaloriesByDateFromCloud(userId, date);
+
+        if (error) {
+            console.error('Error getting total calories:', error);
+            return 0;
+        }
+
+        return data || 0;
+    } catch (error) {
+        console.error('Error getting total calories:', error);
+        return 0;
+    }
 };
 
 /**
- * Calculate total calories for a specific date
+ * Delete a meal by ID (from Supabase)
  */
-export const getTotalCaloriesByDate = async (date) => {
-    const meals = await getMealsByDate(date);
-    return meals.reduce((total, meal) => total + (meal.calories || 0), 0);
+export const deleteMeal = async (mealId) => {
+    try {
+        console.log('Deleting meal:', mealId);
+
+        const { error } = await deleteMealFromCloud(mealId);
+
+        if (error) {
+            console.error('Error deleting meal:', error);
+            throw error;
+        }
+
+        console.log('Meal deleted successfully');
+        return true;
+    } catch (error) {
+        console.error('Error deleting meal:', error);
+        throw new Error('Failed to delete meal');
+    }
+};
+
+/**
+ * Get meals by date (from Supabase)
+ */
+export const getMealsByDate = async (date) => {
+    const allMeals = await getAllMeals();
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return allMeals.filter(
+        (meal) =>
+            meal.timestamp >= startOfDay.getTime() &&
+            meal.timestamp <= endOfDay.getTime()
+    );
 };
 
 /**
@@ -103,21 +201,6 @@ export const getCaloriesByMealType = async (date) => {
     });
 
     return breakdown;
-};
-
-/**
- * Delete a meal by ID
- */
-export const deleteMeal = async (mealId) => {
-    try {
-        const meals = await getAllMeals();
-        const filteredMeals = meals.filter((meal) => meal.id !== mealId);
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filteredMeals));
-        return true;
-    } catch (error) {
-        console.error('Error deleting meal:', error);
-        throw new Error('Failed to delete meal');
-    }
 };
 
 /**

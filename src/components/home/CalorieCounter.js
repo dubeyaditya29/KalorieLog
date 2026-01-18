@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { theme } from '../styles/theme';
+import { theme } from '../../styles/theme';
 
 export const CalorieCounter = ({ totalCalories, goalCalories = 2000, breakdown }) => {
     const percentage = Math.min((totalCalories / goalCalories) * 100, 100);

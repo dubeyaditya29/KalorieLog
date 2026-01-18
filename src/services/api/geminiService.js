@@ -28,17 +28,21 @@ export const analyzeFoodImage = async (imageUri) => {
         // Create the prompt for calorie analysis
         const prompt = `Analyze this food image and provide:
 1. Total estimated calories for the entire plate/meal
-2. A brief description of the food items visible
-3. A list of individual food items
+2. Estimated macronutrients (protein, carbohydrates, fat in grams)
+3. A brief description of the food items visible
+4. A list of individual food items
 
 Please respond in the following JSON format only, no other text:
 {
   "calories": <number>,
+  "protein": <grams>,
+  "carbs": <grams>,
+  "fat": <grams>,
   "description": "<brief description>",
   "items": ["<item1>", "<item2>", ...]
 }
 
-Be as accurate as possible with calorie estimates based on typical portion sizes shown in the image.`;
+Be as accurate as possible with calorie and macronutrient estimates based on typical portion sizes shown in the image.`;
 
         console.log('Sending request to Gemini API...');
 
@@ -74,6 +78,9 @@ Be as accurate as possible with calorie estimates based on typical portion sizes
 
         return {
             calories: parsedResult.calories || 0,
+            protein: parsedResult.protein || 0,
+            carbs: parsedResult.carbs || 0,
+            fat: parsedResult.fat || 0,
             description: parsedResult.description || 'Food items detected',
             items: parsedResult.items || [],
         };

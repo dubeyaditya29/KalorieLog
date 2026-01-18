@@ -1,37 +1,46 @@
 export const theme = {
     colors: {
-        primary: '#6366F1', // Indigo
-        primaryDark: '#4F46E5',
-        primaryLight: '#818CF8',
+        // Backgrounds - Dark theme
+        background: '#1C1C1E',        // Main dark background
+        backgroundSecondary: '#2C2C2E', // Card backgrounds
+        backgroundTertiary: '#3A3A3C',  // Elevated elements
 
-        secondary: '#10B981', // Emerald
-        secondaryDark: '#059669',
-        secondaryLight: '#34D399',
+        // Text - High contrast for dark backgrounds
+        text: '#FFFFFF',              // Primary text
+        textSecondary: '#ABABAB',     // Secondary text
+        textTertiary: '#6E6E73',      // Tertiary/disabled text
+        textLight: '#8E8E93',         // Even lighter text
 
-        background: '#FFFFFF',
-        backgroundSecondary: '#F9FAFB',
-        backgroundTertiary: '#F3F4F6',
+        // Accents - iOS-style colors
+        primary: '#0A84FF',           // Blue accent
+        primaryDark: '#0066CC',
+        primaryLight: '#409CFF',
 
-        text: '#111827',
-        textSecondary: '#6B7280',
-        textLight: '#9CA3AF',
+        secondary: '#30D158',         // Green
+        secondaryDark: '#248A3D',
+        secondaryLight: '#5DE283',
 
-        border: '#E5E7EB',
-        borderLight: '#F3F4F6',
+        // Status colors
+        success: '#30D158',           // Green
+        warning: '#FFD60A',           // Yellow
+        error: '#FF453A',             // Red
+        info: '#0A84FF',              // Blue
 
-        success: '#10B981',
-        warning: '#F59E0B',
-        error: '#EF4444',
-        info: '#3B82F6',
+        // Meal type colors - Muted for dark theme
+        breakfast: '#FFD60A',         // Yellow/Gold
+        lunch: '#0A84FF',             // Blue
+        dinner: '#BF5AF2',            // Purple
+        snack: '#FF9F0A',             // Orange
 
-        // Meal type colors
-        breakfast: '#F59E0B', // Amber
-        lunch: '#3B82F6', // Blue
-        dinner: '#8B5CF6', // Purple
-        snack: '#EC4899', // Pink
+        // Borders & Dividers
+        border: '#38383A',
+        borderLight: '#48484A',
+        divider: '#48484A',
 
+        // Special
         white: '#FFFFFF',
         black: '#000000',
+        overlay: 'rgba(0, 0, 0, 0.5)',
     },
 
     spacing: {
@@ -47,18 +56,19 @@ export const theme = {
         sm: 8,
         md: 12,
         lg: 16,
-        xl: 24,
+        xl: 20,
         full: 9999,
     },
 
     fontSize: {
-        xs: 12,
-        sm: 14,
-        md: 16,
-        lg: 18,
+        xs: 11,
+        sm: 13,
+        md: 15,
+        lg: 17,
         xl: 20,
         xxl: 24,
-        xxxl: 32,
+        xxxl: 34,
+        huge: 48,
     },
 
     fontWeight: {
@@ -66,29 +76,44 @@ export const theme = {
         medium: '500',
         semibold: '600',
         bold: '700',
+        heavy: '800',
     },
 
     shadows: {
+        none: {
+            shadowColor: 'transparent',
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0,
+            shadowRadius: 0,
+            elevation: 0,
+        },
         sm: {
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 2,
-            elevation: 1,
+            shadowOpacity: 0.18,
+            shadowRadius: 1.5,
+            elevation: 2,
         },
         md: {
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 3,
+            shadowOpacity: 0.22,
+            shadowRadius: 3,
+            elevation: 4,
         },
         lg: {
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.15,
-            shadowRadius: 8,
-            elevation: 5,
+            shadowOpacity: 0.28,
+            shadowRadius: 5,
+            elevation: 8,
+        },
+        xl: {
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.32,
+            shadowRadius: 10,
+            elevation: 12,
         },
     },
 };
@@ -111,4 +136,14 @@ export const getMealTypeIcon = (mealType) => {
         snack: '🍎',
     };
     return icons[mealType] || '🍽️';
+};
+
+// Helper function to get lighter version of color for gradients
+export const getLighterColor = (color, opacity = 0.3) => {
+    return `${color}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`;
+};
+
+// Helper to create gradient colors
+export const getGradientColors = (startColor, endColor) => {
+    return [startColor, endColor];
 };

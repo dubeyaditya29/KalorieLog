@@ -4,7 +4,6 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    Image,
     ActivityIndicator,
     Alert,
     SafeAreaView,
@@ -12,12 +11,13 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { theme, getMealTypeColor, getMealTypeIcon } from '../styles/theme';
-import { globalStyles } from '../styles/globalStyles';
-import { analyzeFoodImage } from '../services/geminiService';
-import { saveMeal } from '../services/storageService';
+import { theme, getMealTypeColor, getMealTypeIcon } from '../../styles/theme';
+import { globalStyles } from '../../styles/globalStyles';
+import { analyzeFoodImage } from '../../services/api/geminiService';
+import { saveMeal } from '../../services/storageService';
 
 export const AddMealScreen = ({ navigation, route }) => {
     const [selectedMealType, setSelectedMealType] = useState(
@@ -121,6 +121,9 @@ export const AddMealScreen = ({ navigation, route }) => {
                 calories: result.calories,
                 description: result.description,
                 items: result.items,
+                protein: result.protein,
+                carbs: result.carbs,
+                fat: result.fat,
             });
 
             Alert.alert('Success', 'Meal logged successfully!', [
@@ -197,9 +200,10 @@ export const AddMealScreen = ({ navigation, route }) => {
                             <View style={styles.imageContainer}>
                                 <Image
                                     key={imageUri}
-                                    source={{ uri: imageUri }}
+                                    source={imageUri}
                                     style={styles.image}
-                                    resizeMode="cover"
+                                    contentFit="cover"
+                                    transition={200}
                                 />
                                 <TouchableOpacity
                                     style={styles.removeImageButton}
@@ -260,6 +264,28 @@ export const AddMealScreen = ({ navigation, route }) => {
 
                             <Text style={styles.resultDescription}>{result.description}</Text>
 
+                            {/* Macronutrients */}
+                            <View style={styles.macrosContainer}>
+                                <View style={styles.macroItem}>
+                                    <Text style={[styles.macroValue, { color: '#0A84FF' }]}>
+                                        {result.protein || 0}g
+                                    </Text>
+                                    <Text style={styles.macroLabel}>Protein</Text>
+                                </View>
+                                <View style={styles.macroItem}>
+                                    <Text style={[styles.macroValue, { color: '#FFD60A' }]}>
+                                        {result.carbs || 0}g
+                                    </Text>
+                                    <Text style={styles.macroLabel}>Carbs</Text>
+                                </View>
+                                <View style={styles.macroItem}>
+                                    <Text style={[styles.macroValue, { color: '#FF453A' }]}>
+                                        {result.fat || 0}g
+                                    </Text>
+                                    <Text style={styles.macroLabel}>Fat</Text>
+                                </View>
+                            </View>
+
                             {result.items && result.items.length > 0 && (
                                 <View style={styles.itemsList}>
                                     <Text style={styles.itemsTitle}>Detected Items:</Text>
@@ -299,16 +325,16 @@ export const AddMealScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.backgroundSecondary,
+        backgroundColor: theme.colors.background,
     },
     contentContainer: {
-        padding: theme.spacing.md,
+        padding: theme.spacing.lg,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: theme.spacing.lg,
+        marginBottom: theme.spacing.xl,
     },
     backButton: {
         fontSize: theme.fontSize.md,
@@ -337,7 +363,7 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: theme.spacing.md,
         borderRadius: theme.borderRadius.md,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.backgroundSecondary,
         borderWidth: 2,
         borderColor: theme.colors.border,
         alignItems: 'center',
@@ -383,7 +409,7 @@ const styles = StyleSheet.create({
         fontWeight: theme.fontWeight.bold,
     },
     imagePlaceholder: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.backgroundSecondary,
         borderRadius: theme.borderRadius.lg,
         padding: theme.spacing.xl,
         alignItems: 'center',
@@ -407,7 +433,7 @@ const styles = StyleSheet.create({
     },
     imageButton: {
         flex: 1,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.backgroundSecondary,
         borderRadius: theme.borderRadius.md,
         padding: theme.spacing.md,
         alignItems: 'center',
@@ -426,7 +452,7 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.lg,
     },
     resultContainer: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.backgroundSecondary,
         borderRadius: theme.borderRadius.lg,
         padding: theme.spacing.lg,
         ...theme.shadows.md,
@@ -460,6 +486,26 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.lg,
         textAlign: 'center',
         lineHeight: 22,
+    },
+    macrosContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        backgroundColor: theme.colors.backgroundTertiary,
+        borderRadius: theme.borderRadius.md,
+        padding: theme.spacing.md,
+        marginBottom: theme.spacing.lg,
+    },
+    macroItem: {
+        alignItems: 'center',
+    },
+    macroValue: {
+        fontSize: theme.fontSize.xl,
+        fontWeight: theme.fontWeight.bold,
+    },
+    macroLabel: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        marginTop: theme.spacing.xs,
     },
     itemsList: {
         marginBottom: theme.spacing.lg,
