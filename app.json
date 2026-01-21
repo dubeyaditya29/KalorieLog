@@ -19,7 +19,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.kalorielog.app"
+      "package": "com.kalorielog.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,6 +35,12 @@
           "cameraPermission": "Allow KalorieLog to access your camera to take photos of your meals."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3dddd94f-00b8-41b8-b0ea-c61b4285bcd0"
+      }
+    },
+    "owner": "adityadubey29"
   }
 }

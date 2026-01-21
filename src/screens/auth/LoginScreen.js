@@ -76,7 +76,12 @@ export const LoginScreen = ({ navigation }) => {
                     {/* Logo/Title */}
                     <View style={styles.header}>
                         <Image source={logoIcon} style={styles.logo} />
-                        <Text style={styles.title}>KalorieLog</Text>
+                        <View style={styles.titleContainer}>
+                            <Text style={styles.titleK}>K</Text>
+                            <Text style={styles.titleAlorie}>alorie</Text>
+                            <Text style={styles.titleLog}>Log</Text>
+                        </View>
+                        <Text style={styles.tagline}>Track. Analyze. Transform.</Text>
                         <Text style={styles.subtitle}>
                             {isSignUp ? 'Create your account' : 'Welcome back'}
                         </Text>
@@ -157,16 +162,40 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.xxl,
     },
     logo: {
-        width: 80,
-        height: 80,
-        marginBottom: theme.spacing.md,
-        tintColor: '#FFFFFF',
+        width: 90,
+        height: 90,
+        marginBottom: theme.spacing.lg,
+        tintColor: '#30D158',
     },
-    title: {
-        fontSize: theme.fontSize.xxxl,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.text,
-        marginBottom: theme.spacing.sm,
+    titleContainer: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        marginBottom: theme.spacing.xs,
+    },
+    titleK: {
+        fontSize: 42,
+        fontWeight: '900',
+        color: '#30D158',
+        letterSpacing: -2,
+    },
+    titleAlorie: {
+        fontSize: 42,
+        fontWeight: '300',
+        color: '#FFFFFF',
+        letterSpacing: -1,
+    },
+    titleLog: {
+        fontSize: 42,
+        fontWeight: '800',
+        color: '#0A84FF',
+        letterSpacing: -1,
+    },
+    tagline: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        letterSpacing: 3,
+        textTransform: 'uppercase',
+        marginBottom: theme.spacing.lg,
     },
     subtitle: {
         fontSize: theme.fontSize.lg,
