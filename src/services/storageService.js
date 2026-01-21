@@ -119,6 +119,54 @@ export const getTodaysMeals = async () => {
 };
 
 /**
+ * Get meals for a specific date (from Supabase)
+ */
+export const getMealsByDate = async (date) => {
+    try {
+        const userId = await getUserId();
+
+        if (!userId) {
+            return [];
+        }
+
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const { data, error } = await supabase
+            .from('meals')
+            .select('*')
+            .eq('user_id', userId)
+            .gte('logged_at', startOfDay.toISOString())
+            .lte('logged_at', endOfDay.toISOString())
+            .order('logged_at', { ascending: false });
+
+        if (error) {
+            console.error('Error getting meals by date:', error);
+            return [];
+        }
+
+        // Convert Supabase format to app format
+        return data.map(meal => ({
+            id: meal.id,
+            timestamp: new Date(meal.logged_at).getTime(),
+            mealType: meal.meal_type,
+            calories: meal.calories,
+            description: meal.description,
+            items: meal.items || [],
+            protein: meal.protein_g,
+            carbs: meal.carbs_g,
+            fat: meal.fat_g,
+        }));
+    } catch (error) {
+        console.error('Error getting meals by date:', error);
+        return [];
+    }
+};
+
+/**
  * Calculate total calories for a specific date (from Supabase)
  */
 export const getTotalCaloriesByDate = async (date) => {
@@ -163,23 +211,6 @@ export const deleteMeal = async (mealId) => {
         console.error('Error deleting meal:', error);
         throw new Error('Failed to delete meal');
     }
-};
-
-/**
- * Get meals by date (from Supabase)
- */
-export const getMealsByDate = async (date) => {
-    const allMeals = await getAllMeals();
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    return allMeals.filter(
-        (meal) =>
-            meal.timestamp >= startOfDay.getTime() &&
-            meal.timestamp <= endOfDay.getTime()
-    );
 };
 
 /**

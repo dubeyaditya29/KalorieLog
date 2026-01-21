@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -10,14 +10,16 @@ import {
     ScrollView,
     KeyboardAvoidingView,
     Platform,
+    Image as RNImage,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { theme, getMealTypeColor, getMealTypeIcon } from '../../styles/theme';
+import { theme, getMealTypeColor } from '../../styles/theme';
 import { globalStyles } from '../../styles/globalStyles';
 import { analyzeFoodImage } from '../../services/api/geminiService';
 import { saveMeal } from '../../services/storageService';
+import { mealTypeIcons, cameraIcon, galleryIcon, analyzeIcon } from '../../assets';
 
 export const AddMealScreen = ({ navigation, route }) => {
     const [selectedMealType, setSelectedMealType] = useState(
@@ -27,6 +29,7 @@ export const AddMealScreen = ({ navigation, route }) => {
     const [analyzing, setAnalyzing] = useState(false);
     const [result, setResult] = useState(null);
     const [hasPermission, setHasPermission] = useState(null);
+    const scrollViewRef = useRef(null);
 
     useEffect(() => {
         (async () => {
@@ -48,7 +51,8 @@ export const AddMealScreen = ({ navigation, route }) => {
                 mediaTypes: ['images'],
                 allowsEditing: true,
                 aspect: [4, 3],
-                quality: 0.8,
+                quality: 0.5,
+                exif: false,
             });
 
             console.log('Camera result:', result);
@@ -71,7 +75,8 @@ export const AddMealScreen = ({ navigation, route }) => {
                 mediaTypes: ['images'],
                 allowsEditing: true,
                 aspect: [4, 3],
-                quality: 0.8,
+                quality: 0.5,
+                exif: false,
             });
 
             console.log('Gallery result:', result);
@@ -98,6 +103,10 @@ export const AddMealScreen = ({ navigation, route }) => {
         try {
             const analysisResult = await analyzeFoodImage(imageUri);
             setResult(analysisResult);
+            // Scroll to bottom to show results
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
         } catch (error) {
             console.error('Error analyzing image:', error);
             Alert.alert(
@@ -146,7 +155,7 @@ export const AddMealScreen = ({ navigation, route }) => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
             >
-                <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+                <ScrollView ref={scrollViewRef} style={styles.container} contentContainerStyle={styles.contentContainer}>
                     {/* Header */}
                     <View style={styles.header}>
                         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -163,7 +172,7 @@ export const AddMealScreen = ({ navigation, route }) => {
                             {mealTypes.map((type) => {
                                 const isSelected = selectedMealType === type;
                                 const color = getMealTypeColor(type);
-                                const icon = getMealTypeIcon(type);
+                                const icon = mealTypeIcons[type];
 
                                 return (
                                     <TouchableOpacity
@@ -171,19 +180,16 @@ export const AddMealScreen = ({ navigation, route }) => {
                                         style={[
                                             styles.mealTypeButton,
                                             isSelected && {
-                                                backgroundColor: color,
-                                                borderColor: color,
+                                                borderColor: '#FFFFFF',
                                             },
                                         ]}
                                         onPress={() => setSelectedMealType(type)}
                                     >
-                                        <Text style={styles.mealTypeIcon}>{icon}</Text>
-                                        <Text
-                                            style={[
-                                                styles.mealTypeText,
-                                                isSelected && styles.mealTypeTextSelected,
-                                            ]}
-                                        >
+                                        <RNImage
+                                            source={icon}
+                                            style={styles.mealTypeIcon}
+                                        />
+                                        <Text style={styles.mealTypeText}>
                                             {type.charAt(0).toUpperCase() + type.slice(1)}
                                         </Text>
                                     </TouchableOpacity>
@@ -194,8 +200,6 @@ export const AddMealScreen = ({ navigation, route }) => {
 
                     {/* Image Selection */}
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Food Photo</Text>
-
                         {imageUri ? (
                             <View style={styles.imageContainer}>
                                 <Image
@@ -215,23 +219,22 @@ export const AddMealScreen = ({ navigation, route }) => {
                                     <Text style={styles.removeImageText}>✕</Text>
                                 </TouchableOpacity>
                             </View>
-                        ) : (
-                            <View style={styles.imagePlaceholder}>
-                                <Text style={styles.imagePlaceholderIcon}>📸</Text>
-                                <Text style={styles.imagePlaceholderText}>
-                                    Take a photo or select from gallery
-                                </Text>
-                            </View>
-                        )}
+                        ) : null}
 
                         <View style={styles.imageButtons}>
                             <TouchableOpacity style={styles.imageButton} onPress={takePhoto}>
-                                <Text style={styles.imageButtonIcon}>📷</Text>
+                                <RNImage
+                                    source={cameraIcon}
+                                    style={styles.imageButtonIcon}
+                                />
                                 <Text style={styles.imageButtonText}>Take Photo</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-                                <Text style={styles.imageButtonIcon}>🖼️</Text>
+                                <RNImage
+                                    source={galleryIcon}
+                                    style={styles.imageButtonIcon}
+                                />
                                 <Text style={styles.imageButtonText}>Choose from Gallery</Text>
                             </TouchableOpacity>
                         </View>
@@ -244,11 +247,22 @@ export const AddMealScreen = ({ navigation, route }) => {
                             onPress={analyzeImage}
                             disabled={analyzing}
                         >
-                            {analyzing ? (
-                                <ActivityIndicator color={theme.colors.white} />
-                            ) : (
-                                <Text style={globalStyles.buttonText}>Analyze Food 🔍</Text>
-                            )}
+                            <View style={styles.analyzeButtonContent}>
+                                <RNImage
+                                    source={analyzeIcon}
+                                    style={styles.analyzeButtonIcon}
+                                />
+                                <Text style={globalStyles.buttonText}>
+                                    {analyzing ? 'Analyzing...' : 'Analyze Food'}
+                                </Text>
+                                {analyzing && (
+                                    <ActivityIndicator
+                                        color={theme.colors.white}
+                                        size="small"
+                                        style={{ marginLeft: theme.spacing.sm }}
+                                    />
+                                )}
+                            </View>
                         </TouchableOpacity>
                     )}
 
@@ -348,6 +362,7 @@ const styles = StyleSheet.create({
     },
     section: {
         marginBottom: theme.spacing.lg,
+        paddingTop: theme.spacing.md,
     },
     sectionTitle: {
         fontSize: theme.fontSize.lg,
@@ -369,8 +384,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     mealTypeIcon: {
-        fontSize: 24,
+        width: 28,
+        height: 28,
         marginBottom: theme.spacing.xs,
+        tintColor: '#FFFFFF',
     },
     mealTypeText: {
         fontSize: theme.fontSize.sm,
@@ -440,8 +457,10 @@ const styles = StyleSheet.create({
         ...theme.shadows.sm,
     },
     imageButtonIcon: {
-        fontSize: 32,
+        width: 32,
+        height: 32,
         marginBottom: theme.spacing.xs,
+        tintColor: '#FFFFFF',
     },
     imageButtonText: {
         fontSize: theme.fontSize.sm,
@@ -450,6 +469,16 @@ const styles = StyleSheet.create({
     },
     analyzeButton: {
         marginBottom: theme.spacing.lg,
+    },
+    analyzeButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.sm,
+    },
+    analyzeButtonIcon: {
+        width: 24,
+        height: 24,
+        tintColor: '#FFFFFF',
     },
     resultContainer: {
         backgroundColor: theme.colors.backgroundSecondary,

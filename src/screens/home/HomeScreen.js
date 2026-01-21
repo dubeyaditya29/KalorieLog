@@ -8,16 +8,18 @@ import {
     RefreshControl,
     SafeAreaView,
     ScrollView,
+    Image,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { theme, getMealTypeColor } from '../../styles/theme';
 import { globalStyles } from '../../styles/globalStyles';
-import { getTodaysMeals, getTotalCaloriesByDate } from '../../services/storageService';
+import { getMealsByDate, getTotalCaloriesByDate } from '../../services/storageService';
 import { CircularProgress } from '../../components/common/CircularProgress';
 import { MacroRings } from '../../components/home/MacroRings';
 import { MealCard } from '../../components/meal/MealCard';
 import { useAuth } from '../../contexts/AuthContext';
 import { getProfile } from '../../services/api/profileService';
+import { mealTypeIcons } from '../../assets';
 
 
 export const HomeScreen = ({ navigation }) => {
@@ -27,8 +29,42 @@ export const HomeScreen = ({ navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [calorieGoal, setCalorieGoal] = useState(2300);
     const [profile, setProfile] = useState(null);
+    const [selectedDate, setSelectedDate] = useState(new Date());
 
-    const loadData = async () => {
+    // Generate last 7 days
+    const getLast7Days = () => {
+        const days = [];
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            days.push(date);
+        }
+        return days;
+    };
+
+    const formatDayLabel = (date) => {
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        if (date.toDateString() === today.toDateString()) return 'Today';
+        if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+        return date.toLocaleDateString('en-US', { weekday: 'short' });
+    };
+
+    const formatDateHeader = (date) => {
+        const today = new Date();
+        if (date.toDateString() === today.toDateString()) {
+            return 'Today';
+        }
+        return date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
+
+    const loadData = async (date = selectedDate) => {
         try {
             // Load profile for calorie goal
             const { data: profileData } = await getProfile(user.id);
@@ -37,10 +73,10 @@ export const HomeScreen = ({ navigation }) => {
                 setCalorieGoal(profileData.calorie_goal || 2300);
             }
 
-            // Load meals
-            const todaysMeals = await getTodaysMeals();
-            const total = await getTotalCaloriesByDate(new Date());
-            setMeals(todaysMeals);
+            // Load meals for selected date
+            const dayMeals = await getMealsByDate(date);
+            const total = await getTotalCaloriesByDate(date);
+            setMeals(dayMeals);
             setTotalCalories(total);
         } catch (error) {
             console.error('Error loading data:', error);
@@ -49,13 +85,13 @@ export const HomeScreen = ({ navigation }) => {
 
     useFocusEffect(
         React.useCallback(() => {
-            loadData();
-        }, [])
+            loadData(selectedDate);
+        }, [selectedDate])
     );
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await loadData();
+        await loadData(selectedDate);
         setRefreshing(false);
     };
 
@@ -88,7 +124,10 @@ export const HomeScreen = ({ navigation }) => {
                     onPress={() => navigation.navigate('AddMeal', { mealType })}
                 >
                     <View style={styles.mealSectionLeft}>
-                        <Text style={styles.mealSectionIcon}>{icon}</Text>
+                        <Image
+                            source={icon}
+                            style={styles.mealSectionIcon}
+                        />
                         <Text style={styles.mealSectionTitle}>{mealTypeLabel}</Text>
                         {totalForType > 0 && (
                             <Text style={styles.mealSectionCalories}>{totalForType} cal</Text>
@@ -125,9 +164,42 @@ export const HomeScreen = ({ navigation }) => {
                     />
                 }
             >
-                {/* Header */}
-                <View style={styles.header}>
-                    <Text style={styles.headerTitle}>TODAY</Text>
+                {/* Date Selector */}
+                <View style={styles.dateSection}>
+                    <Text style={styles.headerTitle}>{formatDateHeader(selectedDate)}</Text>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.dateScroller}
+                        contentContainerStyle={styles.dateScrollerContent}
+                    >
+                        {getLast7Days().map((date, index) => {
+                            const isSelected = date.toDateString() === selectedDate.toDateString();
+                            return (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={[
+                                        styles.dateButton,
+                                        isSelected && styles.dateButtonSelected
+                                    ]}
+                                    onPress={() => setSelectedDate(date)}
+                                >
+                                    <Text style={[
+                                        styles.dateDayName,
+                                        isSelected && styles.dateDayNameSelected
+                                    ]}>
+                                        {formatDayLabel(date)}
+                                    </Text>
+                                    <Text style={[
+                                        styles.dateNumber,
+                                        isSelected && styles.dateNumberSelected
+                                    ]}>
+                                        {date.getDate()}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
                 </View>
 
                 {/* Circular Progress */}
@@ -155,10 +227,10 @@ export const HomeScreen = ({ navigation }) => {
 
                 {/* Meal Sections */}
                 <View style={styles.mealsContainer}>
-                    {renderMealSection('breakfast', 'Breakfast', '🌅')}
-                    {renderMealSection('lunch', 'Lunch', '☀️')}
-                    {renderMealSection('dinner', 'Dinner', '🌙')}
-                    {renderMealSection('snack', 'Snacks', '🍎')}
+                    {renderMealSection('breakfast', 'Breakfast', mealTypeIcons.breakfast)}
+                    {renderMealSection('lunch', 'Lunch', mealTypeIcons.lunch)}
+                    {renderMealSection('dinner', 'Dinner', mealTypeIcons.dinner)}
+                    {renderMealSection('snack', 'Snacks', mealTypeIcons.snack)}
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -173,17 +245,50 @@ const styles = StyleSheet.create({
     contentContainer: {
         paddingBottom: theme.spacing.xl,
     },
-    header: {
+    dateSection: {
         paddingHorizontal: theme.spacing.lg,
         paddingTop: theme.spacing.md,
         paddingBottom: theme.spacing.sm,
-        alignItems: 'center',
     },
     headerTitle: {
-        fontSize: theme.fontSize.md,
-        fontWeight: theme.fontWeight.semibold,
+        fontSize: theme.fontSize.xl,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+        marginBottom: theme.spacing.md,
+    },
+    dateScroller: {
+        marginHorizontal: -theme.spacing.lg,
+    },
+    dateScrollerContent: {
+        paddingHorizontal: theme.spacing.lg,
+        gap: theme.spacing.sm,
+    },
+    dateButton: {
+        alignItems: 'center',
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.md,
+        borderRadius: theme.borderRadius.md,
+        backgroundColor: theme.colors.backgroundSecondary,
+        minWidth: 60,
+    },
+    dateButtonSelected: {
+        backgroundColor: theme.colors.primary,
+    },
+    dateDayName: {
+        fontSize: theme.fontSize.xs,
         color: theme.colors.textSecondary,
-        letterSpacing: 1,
+        marginBottom: theme.spacing.xs,
+    },
+    dateDayNameSelected: {
+        color: theme.colors.white,
+    },
+    dateNumber: {
+        fontSize: theme.fontSize.lg,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+    },
+    dateNumberSelected: {
+        color: theme.colors.white,
     },
     progressSection: {
         alignItems: 'center',
@@ -222,8 +327,10 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     mealSectionIcon: {
-        fontSize: 20,
+        width: 24,
+        height: 24,
         marginRight: theme.spacing.sm,
+        tintColor: '#FFFFFF',
     },
     mealSectionTitle: {
         fontSize: theme.fontSize.md,

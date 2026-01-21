@@ -10,10 +10,12 @@ import {
     Platform,
     ActivityIndicator,
     Alert,
+    Image,
 } from 'react-native';
 import { theme } from '../../styles/theme';
 import { globalStyles } from '../../styles/globalStyles';
 import { signInWithEmail, signUpWithEmail } from '../../services/api/authService';
+import { logoIcon } from '../../assets';
 
 export const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
@@ -73,8 +75,8 @@ export const LoginScreen = ({ navigation }) => {
                 <View style={styles.content}>
                     {/* Logo/Title */}
                     <View style={styles.header}>
-                        <Text style={styles.logo}>🍽️</Text>
-                        <Text style={styles.title}>BiteLog</Text>
+                        <Image source={logoIcon} style={styles.logo} />
+                        <Text style={styles.title}>KalorieLog</Text>
                         <Text style={styles.subtitle}>
                             {isSignUp ? 'Create your account' : 'Welcome back'}
                         </Text>
@@ -155,8 +157,10 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.xxl,
     },
     logo: {
-        fontSize: 80,
+        width: 80,
+        height: 80,
         marginBottom: theme.spacing.md,
+        tintColor: '#FFFFFF',
     },
     title: {
         fontSize: theme.fontSize.xxxl,

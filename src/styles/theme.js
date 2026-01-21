@@ -27,10 +27,10 @@ export const theme = {
         info: '#0A84FF',              // Blue
 
         // Meal type colors - Muted for dark theme
-        breakfast: '#FFD60A',         // Yellow/Gold
+        breakfast: '#5E5CE6',         // Indigo/Purple (was Yellow)
         lunch: '#0A84FF',             // Blue
         dinner: '#BF5AF2',            // Purple
-        snack: '#FF9F0A',             // Orange
+        snack: '#FF6B6B',             // Coral Pink (was Orange)
 
         // Borders & Dividers
         border: '#38383A',

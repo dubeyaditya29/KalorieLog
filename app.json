@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "biteLog",
-    "slug": "biteLog",
+    "name": "KalorieLog",
+    "slug": "kalorieLog",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,14 +12,14 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "bundleIdentifier": "com.bitelog.app"
+      "bundleIdentifier": "com.kalorielog.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.bitelog.app"
+      "package": "com.kalorielog.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -28,7 +28,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow BiteLog to access your camera to take photos of your meals."
+          "cameraPermission": "Allow KalorieLog to access your camera to take photos of your meals."
         }
       ]
     ]

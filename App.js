@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Text, Image } from 'react-native';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { theme } from './src/styles/theme';
 
@@ -17,6 +17,9 @@ import { ProfileScreen } from './src/screens/profile/ProfileScreen';
 
 // Services
 import { hasCompletedProfile } from './src/services/api/profileService';
+
+// Icons
+import { homeIcon, profileIcon } from './src/assets';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -54,10 +57,13 @@ function MainTabs() {
         name="Home"
         component={HomeScreen}
         options={{
-          title: 'BiteLog',
+          title: 'KalorieLog',
           tabBarLabel: 'Home',
           tabBarIcon: ({ color, size }) => (
-            <Text style={{ fontSize: 24 }}>🏠</Text>
+            <Image
+              source={homeIcon}
+              style={{ width: 24, height: 24, tintColor: color }}
+            />
           ),
         }}
       />
@@ -68,7 +74,10 @@ function MainTabs() {
           title: 'Profile',
           tabBarLabel: 'Profile',
           tabBarIcon: ({ color, size }) => (
-            <Text style={{ fontSize: 24 }}>👤</Text>
+            <Image
+              source={profileIcon}
+              style={{ width: 24, height: 24, tintColor: color }}
+            />
           ),
         }}
       />
@@ -84,13 +93,19 @@ function Navigation() {
   useEffect(() => {
     const checkProfile = async () => {
       if (user) {
+        console.log('Checking profile for user:', user.id);
         const isComplete = await hasCompletedProfile(user.id);
+        console.log('Profile complete:', isComplete);
         setProfileComplete(isComplete);
+      } else {
+        console.log('No user, skipping profile check');
+        setProfileComplete(false);
       }
       setCheckingProfile(false);
     };
 
     if (!loading) {
+      setCheckingProfile(true);
       checkProfile();
     }
   }, [user, loading]);
