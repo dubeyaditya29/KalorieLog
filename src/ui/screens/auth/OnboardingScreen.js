@@ -14,9 +14,9 @@ import {
 } from 'react-native';
 import { theme } from '../../styles/theme';
 import { globalStyles } from '../../styles/globalStyles';
-import { useAuth } from '../../contexts/AuthContext';
-import { upsertProfile } from '../../services/api/profileService';
-import { calculateBMR, calculateCalorieGoal, calculateBMI, getBMICategory } from '../../utils/bmiCalculator';
+import { useAuth } from '../../../logic/contexts/AuthContext';
+import { upsertProfile } from '../../../logic/services/api/profileService';
+import { calculateBMR, calculateCalorieGoal, calculateBMI, getBMICategory } from '../../../logic/utils/bmiCalculator';
 
 export const OnboardingScreen = () => {
     const { user } = useAuth();

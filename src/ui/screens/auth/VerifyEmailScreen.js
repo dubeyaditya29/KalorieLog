@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { theme } from '../../styles/theme';
 import { globalStyles } from '../../styles/globalStyles';
-import { verifyEmail, resendVerificationCode } from '../../services/authService';
+import { verifyEmail, resendVerificationCode } from '../../../logic/services/api/authService';
 
 export const VerifyEmailScreen = ({ route, navigation }) => {
     const { email } = route.params;

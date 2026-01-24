@@ -13,12 +13,12 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { theme, getMealTypeColor } from '../../styles/theme';
 import { globalStyles } from '../../styles/globalStyles';
-import { getMealsByDate, getTotalCaloriesByDate } from '../../services/storageService';
+import { getMealsByDate, getTotalCaloriesByDate } from '../../../logic/services/storageService';
 import { CircularProgress } from '../../components/common/CircularProgress';
 import { MacroRings } from '../../components/home/MacroRings';
 import { MealCard } from '../../components/meal/MealCard';
-import { useAuth } from '../../contexts/AuthContext';
-import { getProfile } from '../../services/api/profileService';
+import { useAuth } from '../../../logic/contexts/AuthContext';
+import { getProfile } from '../../../logic/services/api/profileService';
 import { mealTypeIcons } from '../../assets';
 
 

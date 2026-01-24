@@ -3,23 +3,24 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, ActivityIndicator, StyleSheet, Text, Image } from 'react-native';
-import { AuthProvider, useAuth } from './src/contexts/AuthContext';
-import { theme } from './src/styles/theme';
+import { AuthProvider, useAuth } from './src/logic/contexts/AuthContext';
+import { theme } from './src/ui/styles/theme';
 
 // Auth Screens
-import { LoginScreen } from './src/screens/auth/LoginScreen';
-import { OnboardingScreen } from './src/screens/auth/OnboardingScreen';
+import { LoginScreen } from './src/ui/screens/auth/LoginScreen';
+import { OnboardingScreen } from './src/ui/screens/auth/OnboardingScreen';
 
 // Main Screens
-import { HomeScreen } from './src/screens/home/HomeScreen';
-import { AddMealScreen } from './src/screens/meal/AddMealScreen';
-import { ProfileScreen } from './src/screens/profile/ProfileScreen';
+import { HomeScreen } from './src/ui/screens/home/HomeScreen';
+import { AddMealScreen } from './src/ui/screens/meal/AddMealScreen';
+import { ProfileScreen } from './src/ui/screens/profile/ProfileScreen';
 
 // Services
-import { hasCompletedProfile } from './src/services/api/profileService';
+import { hasCompletedProfile } from './src/logic/services/api/profileService';
 
 // Icons
-import { homeIcon, profileIcon } from './src/assets';
+import { homeIcon, profileIcon } from './src/ui/assets';
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();

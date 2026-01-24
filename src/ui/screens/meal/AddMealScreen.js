@@ -17,8 +17,8 @@ import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { theme, getMealTypeColor } from '../../styles/theme';
 import { globalStyles } from '../../styles/globalStyles';
-import { analyzeFoodImage } from '../../services/api/geminiService';
-import { saveMeal } from '../../services/storageService';
+import { analyzeFoodImage } from '../../../logic/services/api/geminiService';
+import { saveMeal } from '../../../logic/services/storageService';
 import { mealTypeIcons, cameraIcon, galleryIcon, analyzeIcon } from '../../assets';
 
 export const AddMealScreen = ({ navigation, route }) => {

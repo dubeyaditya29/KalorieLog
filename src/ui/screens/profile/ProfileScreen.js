@@ -12,10 +12,10 @@ import {
 } from 'react-native';
 import { theme } from '../../styles/theme';
 import { globalStyles } from '../../styles/globalStyles';
-import { useAuth } from '../../contexts/AuthContext';
-import { getProfile, updateProfile } from '../../services/api/profileService';
-import { signOut } from '../../services/api/authService';
-import { calculateBMI, getBMICategory, getBMIColor, calculateBMR, calculateCalorieGoal } from '../../utils/bmiCalculator';
+import { useAuth } from '../../../logic/contexts/AuthContext';
+import { getProfile, updateProfile } from '../../../logic/services/api/profileService';
+import { signOut } from '../../../logic/services/api/authService';
+import { calculateBMI, getBMICategory, getBMIColor, calculateBMR, calculateCalorieGoal } from '../../../logic/utils/bmiCalculator';
 
 export const ProfileScreen = ({ navigation }) => {
     const { user } = useAuth();

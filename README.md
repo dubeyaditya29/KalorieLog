@@ -17,69 +17,30 @@ A React Native mobile application for tracking calories and macronutrients using
 ```
 kalorieLog/
 ├── App.js                    # Main application entry point
-├── babel.config.js           # Babel configuration
 ├── package.json              # Dependencies and scripts
 ├── app.json                  # Expo configuration
+├── eas.json                  # EAS Build configuration
+│
+├── database/                 # SQL migration & schema scripts
+│   ├── supabase_schema.sql
+│   ├── supabase_create_meals.sql
+│   └── supabase_add_macros.sql
 │
 ├── src/
-│   ├── assets/               # Icons and images
-│   │   ├── index.js          # Barrel export for assets
-│   │   └── icons/            # Custom icons (PNG)
-│   │       ├── breakfast.png, lunch.png, dinner.png, snacks.png
-│   │       ├── home.png, profile.png
-│   │       ├── camera.png, gallery.png
-│   │       ├── logo.png, analyze.png
+│   ├── ui/                   # UI Layer (Visual components)
+│   │   ├── assets/           # Icons and images
+│   │   ├── components/       # Reusable UI components
+│   │   ├── screens/          # App screens
+│   │   └── styles/           # Theming and global styles
 │   │
-│   ├── components/           # Reusable UI components
-│   │   ├── index.js          # Barrel export for components
-│   │   ├── common/           # Shared components
-│   │   │   └── CircularProgress.js
-│   │   ├── home/             # Home screen specific components
-│   │   │   ├── CalorieCounter.js
-│   │   │   ├── MacroRings.js
-│   │   │   └── MacronutrientBar.js
-│   │   └── meal/             # Meal-related components
-│   │       └── MealCard.js
-│   │
-│   ├── screens/              # App screens
-│   │   ├── index.js          # Barrel export for screens
-│   │   ├── auth/             # Authentication screens
-│   │   │   ├── LoginScreen.js
-│   │   │   ├── OnboardingScreen.js
-│   │   │   └── VerifyEmailScreen.js
-│   │   ├── home/             # Home screen
-│   │   │   └── HomeScreen.js
-│   │   ├── meal/             # Meal-related screens
-│   │   │   └── AddMealScreen.js
-│   │   └── profile/          # Profile screen
-│   │       └── ProfileScreen.js
-│   │
-│   ├── services/             # Business logic and API services
-│   │   ├── index.js          # Barrel export for services
-│   │   ├── api/              # External API integrations
-│   │   │   ├── supabase.js   # Supabase client
-│   │   │   ├── authService.js
-│   │   │   ├── geminiService.js
-│   │   │   ├── mealService.js
-│   │   │   └── profileService.js
-│   │   └── storageService.js # Meal storage and retrieval
-│   │
-│   ├── contexts/             # React Context providers
-│   │   └── AuthContext.js
-│   │
-│   ├── styles/               # Global styles and theming
-│   │   ├── theme.js          # Color palette, spacing, fonts
-│   │   └── globalStyles.js   # Common button styles, etc.
-│   │
-│   ├── utils/                # Utility functions
-│   │   └── bmiCalculator.js
-│   │
-│   ├── hooks/                # Custom React hooks (future)
-│   │
-│   └── constants/            # App constants (future)
-│
-└── supabase_*.sql            # Database migration scripts
+│   └── logic/                # Logic Layer (Business logic & Data)
+│       ├── services/         # API & Storage services
+│       ├── contexts/         # React Context providers (Auth)
+│       ├── utils/            # Utility functions (BMI, etc.)
+│       ├── hooks/            # Custom React hooks
+│       └── constants/        # App-wide constants
 ```
+
 
 ## 🚀 Getting Started
 
@@ -118,9 +79,9 @@ EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
 ### Supabase Setup
 
 Run the SQL migration files in your Supabase SQL editor:
-1. `supabase_schema.sql` - Creates profiles table
-2. `supabase_create_meals.sql` - Creates meals table
-3. `supabase_add_macros.sql` - Adds macronutrient columns
+1. `database/supabase_schema.sql` - Creates profiles table
+2. `database/supabase_create_meals.sql` - Creates meals table
+3. `database/supabase_add_macros.sql` - Adds macronutrient columns
 
 ## 🏗️ Architecture
 

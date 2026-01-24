@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { theme, getMealTypeColor } from '../../styles/theme';
-import { deleteMeal } from '../../services/storageService';
+import { deleteMeal } from '../../../logic/services/storageService';
 
 export const MealCard = ({ meal, onDelete }) => {
     const handleDelete = () => {

@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { theme } from '../../styles/theme';
 import { globalStyles } from '../../styles/globalStyles';
-import { signInWithEmail, signUpWithEmail } from '../../services/api/authService';
+import { signInWithEmail, signUpWithEmail } from '../../../logic/services/api/authService';
 import { logoIcon } from '../../assets';
 
 export const LoginScreen = ({ navigation }) => {
