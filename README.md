@@ -9,7 +9,9 @@ A React Native mobile application for tracking calories and macronutrients using
 - 📅 **7-Day History** - View and browse your meal history for the last 7 days
 - 🎯 **Daily Calorie Goals** - Personalized goals based on your BMI and activity level
 - 👤 **User Profiles** - Track your health metrics (age, height, weight)
-- 🔐 **Secure Authentication** - Powered by Supabase with email/password login
+- 🔐 **Secure Authentication** - Email/password login with password reset and account recovery
+- 📱 **Phone Recovery** - Forgot your email? Recover it using your phone number
+- 🎨 **Themed Dialogs** - Beautiful dark-themed modal dialogs throughout the app
 - 🌙 **Beautiful Dark Theme** - Premium dark UI with modern design
 
 ## 📁 Project Structure
@@ -22,23 +24,33 @@ kalorieLog/
 ├── eas.json                  # EAS Build configuration
 │
 ├── database/                 # SQL migration & schema scripts
-│   ├── supabase_schema.sql
-│   ├── supabase_create_meals.sql
-│   └── supabase_add_macros.sql
+│   ├── supabase_schema.sql           # Creates profiles table
+│   ├── supabase_create_meals.sql     # Creates meals table
+│   ├── supabase_add_macros.sql       # Adds macronutrient columns
+│   ├── supabase_add_phone.sql        # Adds phone_number column + forgot email function
+│   └── supabase_add_email_verified.sql # Adds email verification tracking
 │
 ├── src/
 │   ├── ui/                   # UI Layer (Visual components)
 │   │   ├── assets/           # Icons and images
 │   │   ├── components/       # Reusable UI components
+│   │   │   ├── common/       # Shared components (ThemedModal, etc.)
+│   │   │   ├── home/         # Home screen components
+│   │   │   └── meal/         # Meal-related components
 │   │   ├── screens/          # App screens
+│   │   │   ├── auth/         # Login, Onboarding, etc.
+│   │   │   ├── home/         # Home/Dashboard
+│   │   │   ├── meal/         # Add/Edit meal
+│   │   │   └── profile/      # User profile
 │   │   └── styles/           # Theming and global styles
 │   │
 │   └── logic/                # Logic Layer (Business logic & Data)
 │       ├── services/         # API & Storage services
+│       │   └── api/          # Supabase, Gemini, Auth services
 │       ├── contexts/         # React Context providers (Auth)
 │       ├── utils/            # Utility functions (BMI, etc.)
 │       ├── hooks/            # Custom React hooks
-│       └── constants/        # App-wide constants
+│       └── constants/        # App-wide constants & messages
 ```
 
 
@@ -56,8 +68,8 @@ kalorieLog/
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/kalorielog.git
-cd kalorielog
+git clone https://github.com/dubeyaditya29/KalorieLog.git
+cd KalorieLog
 
 # Install dependencies
 npm install
@@ -78,10 +90,13 @@ EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
 
 ### Supabase Setup
 
-Run the SQL migration files in your Supabase SQL editor:
-1. `database/supabase_schema.sql` - Creates profiles table
+Run the SQL migration files in your Supabase SQL editor (in order):
+
+1. `database/supabase_schema.sql` - Creates profiles table with RLS policies
 2. `database/supabase_create_meals.sql` - Creates meals table
-3. `database/supabase_add_macros.sql` - Adds macronutrient columns
+3. `database/supabase_add_macros.sql` - Adds macronutrient columns (protein, carbs, fat)
+4. `database/supabase_add_phone.sql` - Adds phone_number column + forgot email lookup function
+5. `database/supabase_add_email_verified.sql` - Adds email_verified column with auto-sync trigger
 
 ## 🏗️ Architecture
 
@@ -93,33 +108,44 @@ Run the SQL migration files in your Supabase SQL editor:
 | Navigation | React Navigation (Bottom Tabs + Stack) |
 | Backend | Supabase (PostgreSQL) |
 | AI/ML | Google Gemini API |
-| Auth | Supabase Auth |
+| Auth | Supabase Auth (Email/Password) |
 | Styling | StyleSheet (dark theme) |
+
+### Authentication Flow
+
+| Flow | Description |
+|------|-------------|
+| **Sign Up** | Email + Password → Profile creation → Home |
+| **Sign In** | Email + Password → Home |
+| **Forgot Password** | Enter email → Receive reset link (via Supabase) |
+| **Forgot Email** | Enter phone number → View associated email |
 
 ### Folder Guidelines
 
 - **assets/**: Custom icons and images with barrel exports
-- **components/**: Reusable UI components organized by feature
+- **components/common/**: Shared UI components (ThemedModal, etc.)
+- **components/**: Feature-specific reusable UI components
 - **screens/**: Full-page components representing app screens
-- **services/**: All business logic, API calls, and data manipulation
+- **services/api/**: All API calls (Supabase, Gemini, Auth)
 - **contexts/**: React Context providers for global state
 - **styles/**: Theming and global styles only
 - **utils/**: Pure utility functions with no side effects
+- **constants/**: Centralized messages and configuration
 
 ### Naming Conventions
 
 - Components: PascalCase, e.g., `MealCard.js`
-- Services: camelCase, e.g., `mealService.js`
+- Services: camelCase, e.g., `authService.js`
 - Screens: PascalCase + Screen suffix, e.g., `HomeScreen.js`
 - Icons: lowercase with underscores, e.g., `breakfast.png`
 
 ## 📱 App Flow
 
 1. **Login/Register** → Users authenticate with email and password
-2. **Onboarding** → First-time users complete their profile (name, age, height, weight)
+2. **Onboarding** → First-time users complete their profile (name, phone, age, height, weight)
 3. **Home Screen** → View daily progress, macros, and meal history
 4. **Add Meal** → Take photo or select from gallery → AI analyzes → Review → Save
-5. **Profile** → View/edit user settings and health metrics
+5. **Profile** → View/edit user settings, health metrics, and sign out
 
 ## 🎨 Design System
 
@@ -129,14 +155,42 @@ Run the SQL migration files in your Supabase SQL editor:
 |-------|-----|-------|
 | Background | `#1C1C1E` | Main dark background |
 | Primary | `#0A84FF` | Blue accent, buttons |
+| Success | `#30D158` | Green, success states |
+| Error | `#FF453A` | Red, destructive actions |
 | Breakfast | `#5E5CE6` | Indigo |
 | Lunch | `#0A84FF` | Blue |
 | Dinner | `#BF5AF2` | Purple |
 | Snack | `#FF6B6B` | Coral |
 
+### Themed Modals
+
+All dialogs use the `ThemedModal` component for consistent dark-themed UI:
+
+```javascript
+import { useModal } from '../components/common/ThemedModal';
+
+const { showAlert, showConfirm, showDestructive } = useModal();
+
+// Simple alert
+showAlert('Title', 'Message');
+
+// Confirmation dialog
+showConfirm('Title', 'Are you sure?', onConfirm);
+
+// Destructive action (red button)
+showDestructive('Delete', 'Are you sure?', 'Delete', onDelete);
+```
+
 ### Icons
 
 All icons are custom PNG files with white `tintColor` applied for dark theme visibility.
+
+## 🔒 Security
+
+- **SQL Injection Protection**: All queries use parameterized statements via Supabase client
+- **Row Level Security (RLS)**: Users can only access their own data
+- **Input Validation**: Client-side and server-side validation on all inputs
+- **Secure Functions**: `SECURITY DEFINER` functions for controlled data access
 
 ## 🤝 Contributing
 
