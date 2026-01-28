@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { supabase } from '../services/api/supabase';
 
 const AuthContext = createContext({});
@@ -7,6 +7,8 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [session, setSession] = useState(null);
     const [loading, setLoading] = useState(true);
+    // Counter to trigger profile refresh when updated
+    const [profileVersion, setProfileVersion] = useState(0);
 
     useEffect(() => {
         // Check active session
@@ -28,10 +30,18 @@ export const AuthProvider = ({ children }) => {
         return () => subscription.unsubscribe();
     }, []);
 
+    // Function to refresh profile check (call after profile update)
+    const refreshProfile = useCallback(() => {
+        console.log('Refreshing profile...');
+        setProfileVersion(v => v + 1);
+    }, []);
+
     const value = {
         user,
         session,
         loading,
+        profileVersion,
+        refreshProfile,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -7,7 +7,6 @@ import {
     StyleSheet,
     SafeAreaView,
     ScrollView,
-    Alert,
     ActivityIndicator,
 } from 'react-native';
 import { theme } from '../../styles/theme';
@@ -15,10 +14,12 @@ import { globalStyles } from '../../styles/globalStyles';
 import { useAuth } from '../../../logic/contexts/AuthContext';
 import { getProfile, updateProfile } from '../../../logic/services/api/profileService';
 import { signOut } from '../../../logic/services/api/authService';
+import { useModal } from '../../components/common/ThemedModal';
 import { calculateBMI, getBMICategory, getBMIColor, calculateBMR, calculateCalorieGoal } from '../../../logic/utils/bmiCalculator';
 
 export const ProfileScreen = ({ navigation }) => {
     const { user } = useAuth();
+    const { showAlert, showDestructive } = useModal();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
@@ -57,7 +58,7 @@ export const ProfileScreen = ({ navigation }) => {
 
     const handleSave = async () => {
         if (!name || !age || !height || !weight) {
-            Alert.alert('Error', 'Please fill in all fields');
+            showAlert('Missing Information', 'Please fill in all fields');
             return;
         }
 
@@ -73,31 +74,23 @@ export const ProfileScreen = ({ navigation }) => {
             });
 
             if (error) {
-                Alert.alert('Error', error.message);
+                showAlert('Oops!', error.message);
             } else {
-                Alert.alert('Success', 'Profile updated!');
+                showAlert('🎉 Saved!', 'Your profile has been updated successfully.');
             }
         } catch (error) {
-            Alert.alert('Error', error.message);
+            showAlert('Something Went Wrong', error.message);
         } finally {
             setSaving(false);
         }
     };
 
     const handleSignOut = async () => {
-        Alert.alert(
+        showDestructive(
             'Sign Out',
             'Are you sure you want to sign out?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Sign Out',
-                    style: 'destructive',
-                    onPress: async () => {
-                        await signOut();
-                    },
-                },
-            ]
+            'Sign Out',
+            signOut
         );
     };
 

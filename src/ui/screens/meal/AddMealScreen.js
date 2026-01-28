@@ -5,7 +5,6 @@ import {
     StyleSheet,
     TouchableOpacity,
     ActivityIndicator,
-    Alert,
     SafeAreaView,
     ScrollView,
     KeyboardAvoidingView,
@@ -19,9 +18,11 @@ import { theme, getMealTypeColor } from '../../styles/theme';
 import { globalStyles } from '../../styles/globalStyles';
 import { analyzeFoodImage } from '../../../logic/services/api/geminiService';
 import { saveMeal } from '../../../logic/services/storageService';
+import { useModal } from '../../components/common/ThemedModal';
 import { mealTypeIcons, cameraIcon, galleryIcon, analyzeIcon } from '../../assets';
 
 export const AddMealScreen = ({ navigation, route }) => {
+    const { showAlert } = useModal();
     const [selectedMealType, setSelectedMealType] = useState(
         route.params?.mealType || 'breakfast'
     );
@@ -65,7 +66,7 @@ export const AddMealScreen = ({ navigation, route }) => {
             }
         } catch (error) {
             console.error('Error taking photo:', error);
-            Alert.alert('Error', 'Failed to take photo. Please try again.');
+            showAlert('Oops!', 'Failed to take photo. Please try again.');
         }
     };
 
@@ -89,13 +90,13 @@ export const AddMealScreen = ({ navigation, route }) => {
             }
         } catch (error) {
             console.error('Error picking image:', error);
-            Alert.alert('Error', 'Failed to pick image. Please try again.');
+            showAlert('Oops!', 'Failed to pick image. Please try again.');
         }
     };
 
     const analyzeImage = async () => {
         if (!imageUri) {
-            Alert.alert('No Image', 'Please take a photo or select an image first.');
+            showAlert('No Image', 'Please take a photo or select an image first.');
             return;
         }
 
@@ -109,7 +110,7 @@ export const AddMealScreen = ({ navigation, route }) => {
             }, 100);
         } catch (error) {
             console.error('Error analyzing image:', error);
-            Alert.alert(
+            showAlert(
                 'Analysis Failed',
                 'Could not analyze the image. Please try again with a clearer photo of your food.'
             );
@@ -120,7 +121,7 @@ export const AddMealScreen = ({ navigation, route }) => {
 
     const saveMealEntry = async () => {
         if (!result) {
-            Alert.alert('No Analysis', 'Please analyze the image first.');
+            showAlert('No Analysis', 'Please analyze the image first.');
             return;
         }
 
@@ -135,15 +136,16 @@ export const AddMealScreen = ({ navigation, route }) => {
                 fat: result.fat,
             });
 
-            Alert.alert('Success', 'Meal logged successfully!', [
+            showAlert('🎉 Meal Logged!', 'Your meal has been saved successfully.', [
                 {
                     text: 'OK',
+                    style: 'primary',
                     onPress: () => navigation.goBack(),
                 },
             ]);
         } catch (error) {
             console.error('Error saving meal:', error);
-            Alert.alert('Error', 'Failed to save meal. Please try again.');
+            showAlert('Oops!', 'Failed to save meal. Please try again.');
         }
     };
 

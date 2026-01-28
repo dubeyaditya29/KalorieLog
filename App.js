@@ -18,6 +18,9 @@ import { ProfileScreen } from './src/ui/screens/profile/ProfileScreen';
 // Services
 import { hasCompletedProfile } from './src/logic/services/api/profileService';
 
+// Modal Provider
+import { ModalProvider } from './src/ui/components/common/ThemedModal';
+
 // Icons
 import { homeIcon, profileIcon } from './src/ui/assets';
 
@@ -87,14 +90,14 @@ function MainTabs() {
 }
 
 function Navigation() {
-  const { user, loading } = useAuth();
+  const { user, loading, profileVersion } = useAuth();
   const [profileComplete, setProfileComplete] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
 
   useEffect(() => {
     const checkProfile = async () => {
       if (user) {
-        console.log('Checking profile for user:', user.id);
+        console.log('Checking profile for user:', user.id, 'version:', profileVersion);
         const isComplete = await hasCompletedProfile(user.id);
         console.log('Profile complete:', isComplete);
         setProfileComplete(isComplete);
@@ -109,7 +112,7 @@ function Navigation() {
       setCheckingProfile(true);
       checkProfile();
     }
-  }, [user, loading]);
+  }, [user, loading, profileVersion]);
 
   if (loading || checkingProfile) {
     return (
@@ -153,7 +156,9 @@ function Navigation() {
 export default function App() {
   return (
     <AuthProvider>
-      <Navigation />
+      <ModalProvider>
+        <Navigation />
+      </ModalProvider>
     </AuthProvider>
   );
 }

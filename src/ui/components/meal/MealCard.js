@@ -1,29 +1,26 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { theme, getMealTypeColor } from '../../styles/theme';
 import { deleteMeal } from '../../../logic/services/storageService';
+import { useModal } from '../common/ThemedModal';
 
 export const MealCard = ({ meal, onDelete }) => {
+    const { showAlert, showDestructive } = useModal();
+
     const handleDelete = () => {
-        Alert.alert(
+        showDestructive(
             'Delete Meal',
-            'Are you sure you want to delete this meal?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await deleteMeal(meal.id);
-                            if (onDelete) onDelete();
-                        } catch (error) {
-                            console.error('Error deleting meal:', error);
-                            Alert.alert('Error', 'Failed to delete meal');
-                        }
-                    },
-                },
-            ]
+            'Are you sure you want to delete this meal? This cannot be undone.',
+            'Delete',
+            async () => {
+                try {
+                    await deleteMeal(meal.id);
+                    if (onDelete) onDelete();
+                } catch (error) {
+                    console.error('Error deleting meal:', error);
+                    showAlert('Oops!', 'Failed to delete meal. Please try again.');
+                }
+            }
         );
     };
 

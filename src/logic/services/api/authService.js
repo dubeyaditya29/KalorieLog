@@ -1,16 +1,19 @@
 import { supabase } from './supabase';
 
 /**
- * Sign up with email and send verification code
+ * Sign up with email and password
+ * Note: Supabase client uses parameterized queries internally, preventing SQL injection
  */
 export const signUpWithEmail = async (email, password) => {
     try {
+        // Validate inputs
+        if (!email || !password) {
+            throw new Error('Email and password are required');
+        }
+
         const { data, error } = await supabase.auth.signUp({
-            email,
+            email: email.toLowerCase().trim(),
             password,
-            options: {
-                emailRedirectTo: undefined, // We'll handle verification in-app
-            },
         });
 
         if (error) throw error;
@@ -26,8 +29,13 @@ export const signUpWithEmail = async (email, password) => {
  */
 export const signInWithEmail = async (email, password) => {
     try {
+        // Validate inputs
+        if (!email || !password) {
+            throw new Error('Email and password are required');
+        }
+
         const { data, error } = await supabase.auth.signInWithPassword({
-            email,
+            email: email.toLowerCase().trim(),
             password,
         });
 
@@ -40,38 +48,88 @@ export const signInWithEmail = async (email, password) => {
 };
 
 /**
- * Verify email with OTP code
+ * Send password reset email
+ * Uses Supabase's built-in password reset (free, no SMTP config needed for basic use)
  */
-export const verifyEmail = async (email, token) => {
+export const sendPasswordResetEmail = async (email) => {
     try {
-        const { data, error } = await supabase.auth.verifyOtp({
-            email,
-            token,
-            type: 'signup',
-        });
+        if (!email) {
+            throw new Error('Email is required');
+        }
+
+        const { data, error } = await supabase.auth.resetPasswordForEmail(
+            email.toLowerCase().trim(),
+            {
+                // Optional: redirect URL after password reset
+                // redirectTo: 'yourapp://reset-password',
+            }
+        );
 
         if (error) throw error;
         return { data, error: null };
     } catch (error) {
-        console.error('Verification error:', error);
+        console.error('Password reset error:', error);
         return { data: null, error };
     }
 };
 
 /**
- * Resend verification code
+ * Get email by phone number (for "forgot email" feature)
+ * Uses a parameterized RPC call - SQL injection safe
  */
-export const resendVerificationCode = async (email) => {
+export const getEmailByPhone = async (phoneNumber) => {
     try {
-        const { data, error } = await supabase.auth.resend({
-            type: 'signup',
-            email,
-        });
+        if (!phoneNumber) {
+            throw new Error('Phone number is required');
+        }
+
+        // Clean the phone number (remove spaces, keep only digits and +)
+        const cleanPhone = phoneNumber.replace(/[^\d+]/g, '');
+
+        // Use Supabase RPC which uses parameterized queries internally
+        const { data, error } = await supabase
+            .rpc('get_email_by_phone', { phone: cleanPhone });
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+            return { email: data[0].email, error: null };
+        }
+
+        return { email: null, error: null };
+    } catch (error) {
+        console.error('Get email by phone error:', error);
+        return { email: null, error };
+    }
+};
+
+/**
+ * Update phone number in user profile
+ * Uses Supabase client which is SQL injection safe
+ */
+export const updatePhoneNumber = async (userId, phoneNumber) => {
+    try {
+        if (!userId || !phoneNumber) {
+            throw new Error('User ID and phone number are required');
+        }
+
+        // Clean the phone number
+        const cleanPhone = phoneNumber.replace(/[^\d+]/g, '');
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .update({
+                phone_number: cleanPhone,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', userId)
+            .select()
+            .single();
 
         if (error) throw error;
         return { data, error: null };
     } catch (error) {
-        console.error('Resend error:', error);
+        console.error('Update phone number error:', error);
         return { data: null, error };
     }
 };

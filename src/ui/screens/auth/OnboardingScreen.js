@@ -10,25 +10,35 @@ import {
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
-    Alert,
 } from 'react-native';
 import { theme } from '../../styles/theme';
 import { globalStyles } from '../../styles/globalStyles';
 import { useAuth } from '../../../logic/contexts/AuthContext';
 import { upsertProfile } from '../../../logic/services/api/profileService';
+import { signOut } from '../../../logic/services/api/authService';
+import { useModal } from '../../components/common/ThemedModal';
 import { calculateBMR, calculateCalorieGoal, calculateBMI, getBMICategory } from '../../../logic/utils/bmiCalculator';
 
 export const OnboardingScreen = () => {
-    const { user } = useAuth();
+    const { user, refreshProfile } = useAuth();
+    const { showAlert, showDestructive } = useModal();
     const [name, setName] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [age, setAge] = useState('');
     const [height, setHeight] = useState('');
     const [weight, setWeight] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleComplete = async () => {
-        if (!name || !age || !height || !weight) {
-            Alert.alert('Error', 'Please fill in all fields');
+        if (!name || !phoneNumber || !age || !height || !weight) {
+            showAlert('Missing Information', 'Please fill in all fields to continue.');
+            return;
+        }
+
+        // Basic phone validation
+        const cleanPhone = phoneNumber.replace(/\s/g, '');
+        if (cleanPhone.length < 10) {
+            showAlert('Invalid Phone', 'Please enter a valid phone number with at least 10 digits.');
             return;
         }
 
@@ -37,17 +47,17 @@ export const OnboardingScreen = () => {
         const weightNum = parseFloat(weight);
 
         if (ageNum < 1 || ageNum > 120) {
-            Alert.alert('Error', 'Please enter a valid age');
+            showAlert('Invalid Age', 'Please enter a valid age between 1 and 120.');
             return;
         }
 
         if (heightNum < 50 || heightNum > 300) {
-            Alert.alert('Error', 'Please enter a valid height (50-300 cm)');
+            showAlert('Invalid Height', 'Please enter a valid height between 50 and 300 cm.');
             return;
         }
 
         if (weightNum < 20 || weightNum > 500) {
-            Alert.alert('Error', 'Please enter a valid weight (20-500 kg)');
+            showAlert('Invalid Weight', 'Please enter a valid weight between 20 and 500 kg.');
             return;
         }
 
@@ -66,6 +76,7 @@ export const OnboardingScreen = () => {
             const profileData = {
                 email: user.email,
                 name,
+                phone_number: phoneNumber.replace(/\s/g, ''),
                 age: ageNum,
                 height_cm: heightNum,
                 weight_kg: weightNum,
@@ -80,15 +91,16 @@ export const OnboardingScreen = () => {
 
             if (error) {
                 console.error('Profile creation error:', error);
-                Alert.alert('Error', error.message || 'Failed to create profile');
+                showAlert('Oops!', error.message || 'Failed to create profile. Please try again.');
             } else {
                 console.log('Profile created successfully!');
-                Alert.alert('Success', 'Profile created! Loading app...');
+                // Trigger navigation refresh to go to home
+                refreshProfile();
             }
             // If successful, AuthContext will trigger re-render
         } catch (error) {
             console.error('Unexpected error:', error);
-            Alert.alert('Error', error.message || 'An unexpected error occurred');
+            showAlert('Something Went Wrong', error.message || 'An unexpected error occurred. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -129,6 +141,20 @@ export const OnboardingScreen = () => {
                                 value={name}
                                 onChangeText={setName}
                                 autoCapitalize="words"
+                            />
+                        </View>
+
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Phone Number</Text>
+                            <Text style={styles.inputHint}>Used for account recovery if you forget your email</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="+1 234 567 8900"
+                                placeholderTextColor={theme.colors.textTertiary}
+                                value={phoneNumber}
+                                onChangeText={setPhoneNumber}
+                                keyboardType="phone-pad"
+                                autoComplete="tel"
                             />
                         </View>
 
@@ -189,6 +215,22 @@ export const OnboardingScreen = () => {
                             ) : (
                                 <Text style={globalStyles.buttonText}>Complete Setup</Text>
                             )}
+                        </TouchableOpacity>
+
+                        {/* Back/Sign Out Button */}
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => {
+                                showDestructive(
+                                    'Sign Out',
+                                    'Are you sure you want to sign out and use a different account?',
+                                    'Sign Out',
+                                    signOut
+                                );
+                            }}
+                            disabled={loading}
+                        >
+                            <Text style={styles.backButtonText}>← Use a different account</Text>
                         </TouchableOpacity>
                     </View>
                 </ScrollView>
@@ -277,7 +319,23 @@ const styles = StyleSheet.create({
         color: theme.colors.textSecondary,
         fontWeight: theme.fontWeight.medium,
     },
+    inputHint: {
+        fontSize: theme.fontSize.xs,
+        color: theme.colors.textTertiary,
+        marginBottom: theme.spacing.xs,
+        fontStyle: 'italic',
+    },
     completeButton: {
         marginTop: theme.spacing.md,
+    },
+    backButton: {
+        alignItems: 'center',
+        padding: theme.spacing.md,
+        marginTop: theme.spacing.md,
+    },
+    backButtonText: {
+        fontSize: theme.fontSize.md,
+        color: theme.colors.textSecondary,
+        fontWeight: theme.fontWeight.medium,
     },
 });
