@@ -104,7 +104,7 @@ export const getEmailByPhone = async (phoneNumber) => {
 };
 
 /**
- * Update phone number in user profile
+ * Update phone number in user account
  * Uses Supabase client which is SQL injection safe
  */
 export const updatePhoneNumber = async (userId, phoneNumber) => {
@@ -117,7 +117,7 @@ export const updatePhoneNumber = async (userId, phoneNumber) => {
         const cleanPhone = phoneNumber.replace(/[^\d+]/g, '');
 
         const { data, error } = await supabase
-            .from('profiles')
+            .from('accounts')
             .update({
                 phone_number: cleanPhone,
                 updated_at: new Date().toISOString()
