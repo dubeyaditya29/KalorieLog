@@ -1,6 +1,6 @@
-# KalorieLog - AI-Powered Calorie Tracking App
+# Kyra — Your Personal Health Companion
 
-A React Native mobile application for tracking calories and macronutrients using AI-powered food image analysis with Google Gemini.
+A React Native mobile application for tracking calories and macronutrients using AI-powered food image analysis with Google Gemini, plus a personal AI nutrition assistant.
 
 ## ✨ Features
 

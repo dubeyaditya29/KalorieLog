@@ -1,46 +1,48 @@
 export const theme = {
     colors: {
-        // Backgrounds - Dark theme
-        background: '#1C1C1E',        // Main dark background
-        backgroundSecondary: '#2C2C2E', // Card backgrounds
-        backgroundTertiary: '#3A3A3C',  // Elevated elements
+        // Backgrounds - Clean light theme
+        background: '#FFFFFF',          // Main background
+        backgroundSecondary: '#F5F7FA', // Card backgrounds
+        backgroundTertiary: '#EBEFF5',  // Elevated elements / inputs
 
-        // Text - High contrast for dark backgrounds
-        text: '#FFFFFF',              // Primary text
-        textSecondary: '#ABABAB',     // Secondary text
-        textTertiary: '#6E6E73',      // Tertiary/disabled text
-        textLight: '#8E8E93',         // Even lighter text
+        // Text - Dark slate on white
+        text: '#0F172A',              // Primary text
+        textSecondary: '#5A6577',     // Secondary text
+        textTertiary: '#8B95A5',      // Tertiary/disabled text
+        textLight: '#B0B8C4',         // Even lighter text
 
-        // Accents - iOS-style colors
-        primary: '#0A84FF',           // Blue accent
-        primaryDark: '#0066CC',
-        primaryLight: '#409CFF',
+        // Accents - Blue family
+        primary: '#007AFF',           // Blue accent
+        primaryDark: '#005ECB',
+        primaryLight: '#66AFFF',
+        primarySoft: '#EAF3FF',       // Tinted blue background
 
-        secondary: '#30D158',         // Green
+        secondary: '#34C759',         // Green
         secondaryDark: '#248A3D',
-        secondaryLight: '#5DE283',
+        secondaryLight: '#7CE495',
 
         // Status colors
-        success: '#30D158',           // Green
-        warning: '#FFD60A',           // Yellow
-        error: '#FF453A',             // Red
-        info: '#0A84FF',              // Blue
+        success: '#34C759',           // Green
+        warning: '#FF9500',           // Orange
+        error: '#FF3B30',             // Red
+        info: '#007AFF',              // Blue
+        amber: '#F59E0B',             // Carbs accent
 
-        // Meal type colors - Muted for dark theme
-        breakfast: '#5E5CE6',         // Indigo/Purple (was Yellow)
-        lunch: '#0A84FF',             // Blue
-        dinner: '#BF5AF2',            // Purple
-        snack: '#FF6B6B',             // Coral Pink (was Orange)
+        // Meal type colors - Vibrant on white
+        breakfast: '#6366F1',         // Indigo
+        lunch: '#007AFF',             // Blue
+        dinner: '#8B5CF6',            // Purple
+        snack: '#FF6B6B',             // Coral Pink
 
         // Borders & Dividers
-        border: '#38383A',
-        borderLight: '#48484A',
-        divider: '#48484A',
+        border: '#E3E8EF',
+        borderLight: '#EDF1F6',
+        divider: '#E3E8EF',
 
         // Special
         white: '#FFFFFF',
         black: '#000000',
-        overlay: 'rgba(0, 0, 0, 0.5)',
+        overlay: 'rgba(15, 23, 42, 0.45)',
     },
 
     spacing: {
@@ -88,32 +90,32 @@ export const theme = {
             elevation: 0,
         },
         sm: {
-            shadowColor: '#000',
+            shadowColor: '#0F172A',
             shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.18,
-            shadowRadius: 1.5,
-            elevation: 2,
+            shadowOpacity: 0.06,
+            shadowRadius: 2,
+            elevation: 1,
         },
         md: {
-            shadowColor: '#000',
+            shadowColor: '#0F172A',
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.22,
-            shadowRadius: 3,
-            elevation: 4,
+            shadowOpacity: 0.08,
+            shadowRadius: 4,
+            elevation: 2,
         },
         lg: {
-            shadowColor: '#000',
+            shadowColor: '#0F172A',
             shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.28,
-            shadowRadius: 5,
-            elevation: 8,
+            shadowOpacity: 0.10,
+            shadowRadius: 8,
+            elevation: 4,
         },
         xl: {
-            shadowColor: '#000',
+            shadowColor: '#0F172A',
             shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.32,
-            shadowRadius: 10,
-            elevation: 12,
+            shadowOpacity: 0.12,
+            shadowRadius: 14,
+            elevation: 8,
         },
     },
 };
@@ -126,16 +128,6 @@ export const getMealTypeColor = (mealType) => {
         snack: theme.colors.snack,
     };
     return colors[mealType] || theme.colors.primary;
-};
-
-export const getMealTypeIcon = (mealType) => {
-    const icons = {
-        breakfast: '🌅',
-        lunch: '☀️',
-        dinner: '🌙',
-        snack: '🍎',
-    };
-    return icons[mealType] || '🍽️';
 };
 
 // Helper function to get lighter version of color for gradients

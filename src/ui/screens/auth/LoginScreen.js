@@ -642,10 +642,9 @@ export const LoginScreen = ({ navigation }) => {
                         <Image source={logoIcon} style={styles.logo} />
                         <View style={styles.titleContainer}>
                             <Text style={styles.titleK}>K</Text>
-                            <Text style={styles.titleAlorie}>alorie</Text>
-                            <Text style={styles.titleLog}>Log</Text>
+                            <Text style={styles.titleAlorie}>yra</Text>
                         </View>
-                        <Text style={styles.tagline}>Track. Analyze. Transform.</Text>
+                        <Text style={styles.tagline}>Your personal health companion</Text>
                         <Text style={styles.subtitle}>{getSubtitle()}</Text>
                     </View>
 
@@ -686,7 +685,7 @@ const styles = StyleSheet.create({
         width: 90,
         height: 90,
         marginBottom: theme.spacing.lg,
-        tintColor: '#30D158',
+        tintColor: theme.colors.primary,
     },
     titleContainer: {
         flexDirection: 'row',
@@ -696,26 +695,19 @@ const styles = StyleSheet.create({
     titleK: {
         fontSize: 42,
         fontWeight: '900',
-        color: '#30D158',
+        color: theme.colors.primary,
         letterSpacing: -2,
     },
     titleAlorie: {
         fontSize: 42,
         fontWeight: '300',
-        color: '#FFFFFF',
-        letterSpacing: -1,
-    },
-    titleLog: {
-        fontSize: 42,
-        fontWeight: '800',
-        color: '#0A84FF',
+        color: theme.colors.text,
         letterSpacing: -1,
     },
     tagline: {
         fontSize: theme.fontSize.sm,
         color: theme.colors.textSecondary,
-        letterSpacing: 3,
-        textTransform: 'uppercase',
+        letterSpacing: 2,
         marginBottom: theme.spacing.lg,
     },
     subtitle: {

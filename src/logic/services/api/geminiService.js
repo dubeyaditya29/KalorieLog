@@ -104,3 +104,48 @@ export const testGeminiConnection = async () => {
         throw error;
     }
 };
+
+/**
+ * Chat with the nutrition assistant
+ * @param {Array<{role: 'user'|'model', text: string}>} history - prior conversation turns
+ * @param {Object|null} profile - user profile for personalized advice
+ * @returns {Promise<{text: string, error: null}|{text: null, error: Error}>}
+ */
+export const chatWithNutritionist = async (history, profile = null) => {
+    try {
+        const model = genAI.getGenerativeModel({
+            model: 'gemini-2.5-flash',
+            systemInstruction: buildSystemPrompt(profile),
+        });
+
+        const contents = history.map((msg) => ({
+            role: msg.role === 'model' ? 'model' : 'user',
+            parts: [{ text: msg.text }],
+        }));
+
+        const result = await model.generateContent({ contents });
+        return { text: result.response.text(), error: null };
+    } catch (error) {
+        console.error('Chat error:', error);
+        return { text: null, error };
+    }
+};
+
+const buildSystemPrompt = (profile) => {
+    let prompt = `You are Kyra — a warm, personal health companion inside the Kyra app. Keep answers short, practical and encouraging. Use simple language, bullet points when helpful, and never give medical diagnoses. When suggesting foods, prefer everyday options.`;
+
+    if (profile) {
+        const lines = [];
+        if (profile.name) lines.push(`Name: ${profile.name}`);
+        if (profile.age) lines.push(`Age: ${profile.age}`);
+        if (profile.gender) lines.push(`Gender: ${profile.gender}`);
+        if (profile.height_cm) lines.push(`Height: ${profile.height_cm} cm`);
+        if (profile.weight_kg) lines.push(`Weight: ${profile.weight_kg} kg`);
+        if (profile.activity_level) lines.push(`Activity level: ${profile.activity_level}`);
+        if (lines.length > 0) {
+            prompt += `\n\nUser profile:\n${lines.join('\n')}`;
+        }
+    }
+
+    return prompt;
+};

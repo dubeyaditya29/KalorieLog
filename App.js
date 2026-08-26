@@ -1,37 +1,40 @@
 import React, { useState, useEffect } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, ActivityIndicator, StyleSheet, Text, Image } from 'react-native';
 import { AuthProvider, useAuth } from './src/logic/contexts/AuthContext';
 import { theme } from './src/ui/styles/theme';
 
-// Auth Screens
+// Screens
 import { LoginScreen } from './src/ui/screens/auth/LoginScreen';
-import { OnboardingScreen } from './src/ui/screens/auth/OnboardingScreen';
-
-// Main Screens
-import { HomeScreen } from './src/ui/screens/home/HomeScreen';
-import { AddMealScreen } from './src/ui/screens/meal/AddMealScreen';
+import { WelcomeScreen } from './src/ui/screens/welcome/WelcomeScreen';
+import { NutritionScreen } from './src/ui/screens/nutrition/NutritionScreen';
+import { ChatScreen } from './src/ui/screens/chat/ChatScreen';
 import { ProfileScreen } from './src/ui/screens/profile/ProfileScreen';
-
-// Services
-import { hasCompletedProfile } from './src/logic/services/api/profileService';
+import { AddMealScreen } from './src/ui/screens/meal/AddMealScreen';
 
 // Modal Provider
 import { ModalProvider } from './src/ui/components/common/ThemedModal';
-
-// Icons
-import { homeIcon, profileIcon } from './src/ui/assets';
-
+import { NutritionIcon, ChatIcon, ProfileIcon } from './src/ui/components/icons';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Tab Navigator for main app (replaces Drawer - no reanimated needed!)
+const ONBOARDING_KEY = '@kyra_welcome_seen';
+
+const TabIcon = ({ focused, Icon }) => (
+  <View style={[styles.tabIconWrap, focused && styles.tabIconWrapActive]}>
+    <Icon size={19} color={focused ? theme.colors.primary : theme.colors.textTertiary} strokeWidth={focused ? 2 : 1.8} />
+  </View>
+);
+
 function MainTabs() {
   return (
     <Tab.Navigator
+      initialRouteName="Chat"
       screenOptions={{
         headerStyle: {
           backgroundColor: theme.colors.background,
@@ -44,31 +47,35 @@ function MainTabs() {
           backgroundColor: theme.colors.background,
           borderTopColor: theme.colors.border,
           borderTopWidth: 1,
-          paddingTop: 8,
-          paddingBottom: 8,
-          height: 70,
+          paddingTop: 6,
+          paddingBottom: 6,
+          height: 68,
         },
         tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarInactiveTintColor: theme.colors.textTertiary,
         tabBarLabelStyle: {
-          fontSize: theme.fontSize.sm,
-          fontWeight: theme.fontWeight.medium,
-          marginTop: 4,
+          fontSize: theme.fontSize.xs,
+          fontWeight: theme.fontWeight.semibold,
+          marginTop: 2,
         },
       }}
     >
       <Tab.Screen
-        name="Home"
-        component={HomeScreen}
+        name="Chat"
+        component={ChatScreen}
         options={{
-          title: 'KalorieLog',
-          tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Image
-              source={homeIcon}
-              style={{ width: 24, height: 24, tintColor: color }}
-            />
-          ),
+          title: 'Assistant',
+          tabBarLabel: 'Assistant',
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={ChatIcon} />,
+        }}
+      />
+      <Tab.Screen
+        name="Nutrition"
+        component={NutritionScreen}
+        options={{
+          title: 'Kyra',
+          tabBarLabel: 'Nutrition',
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={NutritionIcon} />,
         }}
       />
       <Tab.Screen
@@ -77,12 +84,7 @@ function MainTabs() {
         options={{
           title: 'Profile',
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Image
-              source={profileIcon}
-              style={{ width: 24, height: 24, tintColor: color }}
-            />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={ProfileIcon} />,
         }}
       />
     </Tab.Navigator>
@@ -90,31 +92,21 @@ function MainTabs() {
 }
 
 function Navigation() {
-  const { user, loading, profileVersion } = useAuth();
-  const [profileComplete, setProfileComplete] = useState(false);
-  const [checkingProfile, setCheckingProfile] = useState(true);
+  const { user, loading } = useAuth();
+  const [welcomeSeen, setWelcomeSeen] = useState(null);
 
   useEffect(() => {
-    const checkProfile = async () => {
-      if (user) {
-        console.log('Checking profile for user:', user.id, 'version:', profileVersion);
-        const isComplete = await hasCompletedProfile(user.id);
-        console.log('Profile complete:', isComplete);
-        setProfileComplete(isComplete);
-      } else {
-        console.log('No user, skipping profile check');
-        setProfileComplete(false);
-      }
-      setCheckingProfile(false);
-    };
+    AsyncStorage.getItem(ONBOARDING_KEY)
+      .then((value) => setWelcomeSeen(value === 'true'))
+      .catch(() => setWelcomeSeen(true));
+  }, []);
 
-    if (!loading) {
-      setCheckingProfile(true);
-      checkProfile();
-    }
-  }, [user, loading, profileVersion]);
+  const handleWelcomeFinish = () => {
+    setWelcomeSeen(true);
+    AsyncStorage.setItem(ONBOARDING_KEY, 'true').catch(() => {});
+  };
 
-  if (loading || checkingProfile) {
+  if (loading || welcomeSeen === null) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -130,13 +122,14 @@ function Navigation() {
         }}
       >
         {!user ? (
-          // Auth Stack
-          <Stack.Screen name="Login" component={LoginScreen} />
-        ) : !profileComplete ? (
-          // Onboarding Stack
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          !welcomeSeen ? (
+            <Stack.Screen name="Welcome">
+              {() => <WelcomeScreen onFinish={handleWelcomeFinish} />}
+            </Stack.Screen>
+          ) : (
+            <Stack.Screen name="Login" component={LoginScreen} />
+          )
         ) : (
-          // Main App Stack with Bottom Tabs
           <>
             <Stack.Screen name="MainTabs" component={MainTabs} />
             <Stack.Screen
@@ -157,6 +150,7 @@ export default function App() {
   return (
     <AuthProvider>
       <ModalProvider>
+        <StatusBar style="dark" />
         <Navigation />
       </ModalProvider>
     </AuthProvider>
@@ -169,5 +163,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: theme.colors.background,
+  },
+  tabIconWrap: {
+    width: 44,
+    height: 27,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabIconWrapActive: {
+    backgroundColor: theme.colors.primarySoft,
   },
 });

@@ -1,568 +1,629 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
-    ActivityIndicator,
-    SafeAreaView,
     ScrollView,
+    TextInput,
+    SafeAreaView,
     KeyboardAvoidingView,
-    Platform,
-    Image as RNImage,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { theme, getMealTypeColor } from '../../styles/theme';
 import { globalStyles } from '../../styles/globalStyles';
+import { useAuth } from '../../../logic/contexts/AuthContext';
 import { analyzeFoodImage } from '../../../logic/services/api/geminiService';
 import { saveMeal } from '../../../logic/services/storageService';
-import { useModal } from '../../components/common/ThemedModal';
-import { mealTypeIcons, cameraIcon, galleryIcon, analyzeIcon } from '../../assets';
+import { useModal, AnalysisLoader } from '../../components';
+import {
+    CameraIcon,
+    ImageIcon,
+    CloseIcon,
+    SparklesIcon,
+    EditIcon,
+} from '../../components/icons';
+import { getMacroSuggestions } from '../../../logic/utils/macroGoals';
+import { getProfile } from '../../../logic/services/api/profileService';
+import { getTodaysMeals } from '../../../logic/services/storageService';
+
+const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'];
 
 export const AddMealScreen = ({ navigation, route }) => {
     const { showAlert } = useModal();
-    const [selectedMealType, setSelectedMealType] = useState(
-        route.params?.mealType || 'breakfast'
-    );
+    const { user } = useAuth();
+
+    const [selectedMealType, setSelectedMealType] = useState(route.params?.mealType || 'breakfast');
     const [imageUri, setImageUri] = useState(null);
-    const [analyzing, setAnalyzing] = useState(false);
+    const [stage, setStage] = useState('capture');
+    const [saving, setSaving] = useState(false);
+
     const [result, setResult] = useState(null);
-    const [hasPermission, setHasPermission] = useState(null);
-    const scrollViewRef = useRef(null);
+    const [calories, setCalories] = useState('');
+    const [protein, setProtein] = useState('');
+    const [carbs, setCarbs] = useState('');
+    const [fat, setFat] = useState('');
+    const [description, setDescription] = useState('');
+    const [itemsText, setItemsText] = useState('');
+
+    const [targets, setTargets] = useState(null);
+    const [eatenToday, setEatenToday] = useState({ calories: 0, protein: 0 });
 
     useEffect(() => {
-        (async () => {
-            const { status } = await Camera.requestCameraPermissionsAsync();
-            setHasPermission(status === 'granted');
-        })();
+        loadContext();
     }, []);
 
-    // Debug log when imageUri changes
-    useEffect(() => {
-        if (imageUri) {
-            console.log('Image URI set to:', imageUri);
-        }
-    }, [imageUri]);
-
-    const takePhoto = async () => {
+    const loadContext = async () => {
         try {
-            const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ['images'],
-                allowsEditing: true,
-                aspect: [4, 3],
-                quality: 0.5,
-                exif: false,
-            });
-
-            console.log('Camera result:', result);
-
-            if (!result.canceled && result.assets && result.assets.length > 0) {
-                const uri = result.assets[0].uri;
-                console.log('Setting image URI:', uri);
-                setImageUri(uri);
-                setResult(null);
+            const [{ data: profile }, meals] = await Promise.all([
+                getProfile(user.id),
+                getTodaysMeals(),
+            ]);
+            if (profile) {
+                setTargets(getMacroSuggestions(profile));
             }
+            setEatenToday({
+                calories: meals.reduce((s, m) => s + (m.calories || 0), 0),
+                protein: meals.reduce((s, m) => s + (m.protein || 0), 0),
+            });
         } catch (error) {
-            console.error('Error taking photo:', error);
-            showAlert('Oops!', 'Failed to take photo. Please try again.');
+            console.error('Error loading context:', error);
         }
     };
 
-    const pickImage = async () => {
+    const pickImage = async (fromCamera) => {
         try {
-            const result = await ImagePicker.launchImageLibraryAsync({
+            const options = {
                 mediaTypes: ['images'],
                 allowsEditing: true,
                 aspect: [4, 3],
                 quality: 0.5,
                 exif: false,
-            });
+            };
 
-            console.log('Gallery result:', result);
+            const pickerResult = fromCamera
+                ? await ImagePicker.launchCameraAsync(options)
+                : await ImagePicker.launchImageLibraryAsync(options);
 
-            if (!result.canceled && result.assets && result.assets.length > 0) {
-                const uri = result.assets[0].uri;
-                console.log('Setting image URI:', uri);
+            if (!pickerResult.canceled && pickerResult.assets?.length > 0) {
+                const uri = pickerResult.assets[0].uri;
                 setImageUri(uri);
-                setResult(null);
+                startAnalysis(uri);
             }
         } catch (error) {
             console.error('Error picking image:', error);
-            showAlert('Oops!', 'Failed to pick image. Please try again.');
+            showAlert('Oops!', 'Could not get the photo. Please try again.');
         }
     };
 
-    const analyzeImage = async () => {
-        if (!imageUri) {
-            showAlert('No Image', 'Please take a photo or select an image first.');
-            return;
-        }
-
-        setAnalyzing(true);
+    const startAnalysis = async (uri) => {
+        setStage('analyzing');
         try {
-            const analysisResult = await analyzeFoodImage(imageUri);
+            const analysisResult = await analyzeFoodImage(uri);
             setResult(analysisResult);
-            // Scroll to bottom to show results
-            setTimeout(() => {
-                scrollViewRef.current?.scrollToEnd({ animated: true });
-            }, 100);
+            setCalories(String(analysisResult.calories || ''));
+            setProtein(analysisResult.protein ? String(Math.round(analysisResult.protein)) : '');
+            setCarbs(analysisResult.carbs ? String(Math.round(analysisResult.carbs)) : '');
+            setFat(analysisResult.fat ? String(Math.round(analysisResult.fat)) : '');
+            setDescription(analysisResult.description || '');
+            setItemsText((analysisResult.items || []).join(', '));
+            setStage('review');
         } catch (error) {
             console.error('Error analyzing image:', error);
             showAlert(
                 'Analysis Failed',
-                'Could not analyze the image. Please try again with a clearer photo of your food.'
+                'Could not analyze this photo. Try a clearer picture of your food.',
+                [
+                    { text: 'Try Again', style: 'primary', onPress: () => setStage('capture') },
+                ]
             );
-        } finally {
-            setAnalyzing(false);
+            setStage('capture');
         }
     };
 
+    const retakePhoto = () => {
+        setImageUri(null);
+        setResult(null);
+        setStage('capture');
+    };
+
+    const numeric = (v) => {
+        const n = parseFloat(v);
+        return isNaN(n) ? null : n;
+    };
+
     const saveMealEntry = async () => {
-        if (!result) {
-            showAlert('No Analysis', 'Please analyze the image first.');
+        const cal = numeric(calories);
+        if (cal === null) {
+            showAlert('Missing Calories', 'Enter the calorie estimate before saving.');
             return;
         }
 
+        setSaving(true);
         try {
             await saveMeal({
                 mealType: selectedMealType,
-                calories: result.calories,
-                description: result.description,
-                items: result.items,
-                protein: result.protein,
-                carbs: result.carbs,
-                fat: result.fat,
+                calories: Math.round(cal),
+                description: description.trim() || 'Food items detected',
+                items: itemsText
+                    .split(',')
+                    .map((i) => i.trim())
+                    .filter(Boolean),
+                protein: numeric(protein),
+                carbs: numeric(carbs),
+                fat: numeric(fat),
             });
-
             showAlert('🎉 Meal Logged!', 'Your meal has been saved successfully.', [
-                {
-                    text: 'OK',
-                    style: 'primary',
-                    onPress: () => navigation.goBack(),
-                },
+                { text: 'Done', style: 'primary', onPress: () => navigation.goBack() },
             ]);
         } catch (error) {
             console.error('Error saving meal:', error);
             showAlert('Oops!', 'Failed to save meal. Please try again.');
+        } finally {
+            setSaving(false);
         }
     };
 
-    const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+    // ---------------- Capture stage ----------------
+    if (stage === 'capture') {
+        return (
+            <SafeAreaView style={globalStyles.safeArea}>
+                <View style={styles.captureContainer}>
+                    <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
+                        <CloseIcon size={15} color={theme.colors.textSecondary} strokeWidth={2.2} />
+                    </TouchableOpacity>
+
+                    <View style={styles.captureHero}>
+                        <View style={[styles.heroCircle, styles.heroCircleRing]}>
+                            <CameraIcon size={46} color={theme.colors.primary} strokeWidth={1.5} />
+                        </View>
+                        <Text style={styles.captureTitle}>Snap your meal</Text>
+                        <Text style={styles.captureSubtitle}>
+                            Take a photo and AI will estimate the calories and macros for you.
+                        </Text>
+                    </View>
+
+                    <View style={styles.captureActions}>
+                        <TouchableOpacity style={styles.primaryAction} activeOpacity={0.85} onPress={() => pickImage(true)}>
+                            <CameraIcon size={19} color={theme.colors.white} strokeWidth={2} />
+                            <Text style={styles.primaryActionText}>Open Camera</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.secondaryAction} onPress={() => pickImage(false)}>
+                            <ImageIcon size={18} color={theme.colors.text} strokeWidth={2} />
+                            <Text style={styles.secondaryActionText}>Choose from Gallery</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Meal type selection available upfront */}
+                    <View style={styles.typeRow}>
+                        {MEAL_TYPES.map((type) => (
+                            <TouchableOpacity
+                                key={type}
+                                style={[
+                                    styles.typeChip,
+                                    selectedMealType === type && { backgroundColor: getMealTypeColor(type), borderColor: getMealTypeColor(type) },
+                                ]}
+                                onPress={() => setSelectedMealType(type)}
+                            >
+                                <Text
+                                    style={[
+                                        styles.typeChipText,
+                                        selectedMealType === type && styles.typeChipTextActive,
+                                    ]}
+                                >
+                                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    // ---------------- Analyzing stage ----------------
+    if (stage === 'analyzing') {
+        return (
+            <SafeAreaView style={globalStyles.safeArea}>
+                <View style={styles.analyzingContainer}>
+                    {imageUri && (
+                        <Image source={{ uri: imageUri }} style={styles.analyzingPreview} contentFit="cover" />
+                    )}
+                    <AnalysisLoader size={150} label="Reading your plate…" />
+                    <Text style={styles.analyzingHint}>
+                        Estimating calories, protein, carbs and fat with AI
+                    </Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    // ---------------- Review stage ----------------
+    const remainingProtein = targets ? Math.max(targets.protein - eatenToday.protein - (numeric(protein) || 0), 0) : null;
 
     return (
         <SafeAreaView style={globalStyles.safeArea}>
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={{ flex: 1 }}
+                style={styles.flex1}
+                behavior="padding"
             >
-                <ScrollView ref={scrollViewRef} style={styles.container} contentContainerStyle={styles.contentContainer}>
+                <ScrollView
+                    style={styles.container}
+                    contentContainerStyle={styles.reviewContent}
+                    keyboardShouldPersistTaps="handled"
+                >
                     {/* Header */}
-                    <View style={styles.header}>
-                        <TouchableOpacity onPress={() => navigation.goBack()}>
-                            <Text style={styles.backButton}>← Back</Text>
+                    <View style={styles.reviewHeader}>
+                        <Text style={styles.reviewTitle}>Review your meal</Text>
+                        <TouchableOpacity style={styles.retakeButton} onPress={retakePhoto}>
+                            <EditIcon size={13} color={theme.colors.primary} strokeWidth={2.2} />
+                            <Text style={styles.retakeText}>Edit photo</Text>
                         </TouchableOpacity>
-                        <Text style={styles.title}>Add Meal</Text>
-                        <View style={{ width: 60 }} />
                     </View>
 
-                    {/* Meal Type Selector */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Meal Type</Text>
-                        <View style={styles.mealTypeSelector}>
-                            {mealTypes.map((type) => {
-                                const isSelected = selectedMealType === type;
-                                const color = getMealTypeColor(type);
-                                const icon = mealTypeIcons[type];
+                    {imageUri && (
+                        <Image source={{ uri: imageUri }} style={styles.previewImage} contentFit="cover" />
+                    )}
 
-                                return (
-                                    <TouchableOpacity
-                                        key={type}
-                                        style={[
-                                            styles.mealTypeButton,
-                                            isSelected && {
-                                                borderColor: '#FFFFFF',
-                                            },
-                                        ]}
-                                        onPress={() => setSelectedMealType(type)}
-                                    >
-                                        <RNImage
-                                            source={icon}
-                                            style={styles.mealTypeIcon}
-                                        />
-                                        <Text style={styles.mealTypeText}>
-                                            {type.charAt(0).toUpperCase() + type.slice(1)}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
+                    {/* AI suggestion strip */}
+                    {targets && remainingProtein !== null && (
+                        <View style={styles.suggestionStrip}>
+                            <SparklesIcon size={16} color={theme.colors.primary} strokeWidth={2} />
+                            <Text style={styles.suggestionStripText}>
+                                After this meal you'll be at{' '}
+                                <Text style={styles.suggestionStripStrong}>{eatenToday.calories + (numeric(calories) || 0)}</Text>
+                                /{targets.calorieGoal} cal
+                                {remainingProtein > 0
+                                    ? ` · still ${Math.round(remainingProtein)}g protein short of your ${targets.protein}g target`
+                                    : ' · protein target hit 🎉'}
+                            </Text>
                         </View>
+                    )}
+
+                    {/* Editable macros */}
+                    <Text style={styles.sectionLabel}>Detected by AI — tap to edit</Text>
+                    <View style={styles.macroGrid}>
+                        <MacroInput label="Calories" value={calories} onChange={setCalories} color={theme.colors.primary} />
+                        <MacroInput label="Protein (g)" value={protein} onChange={setProtein} color={theme.colors.lunch} />
+                        <MacroInput label="Carbs (g)" value={carbs} onChange={setCarbs} color={theme.colors.amber} />
+                        <MacroInput label="Fat (g)" value={fat} onChange={setFat} color={theme.colors.error} />
                     </View>
 
-                    {/* Image Selection */}
-                    <View style={styles.section}>
-                        {imageUri ? (
-                            <View style={styles.imageContainer}>
-                                <Image
-                                    key={imageUri}
-                                    source={imageUri}
-                                    style={styles.image}
-                                    contentFit="cover"
-                                    transition={200}
-                                />
-                                <TouchableOpacity
-                                    style={styles.removeImageButton}
-                                    onPress={() => {
-                                        setImageUri(null);
-                                        setResult(null);
-                                    }}
+                    {/* Description */}
+                    <Text style={styles.sectionLabel}>Description</Text>
+                    <TextInput
+                        style={[styles.input, styles.textArea]}
+                        value={description}
+                        onChangeText={setDescription}
+                        placeholder="What did you eat?"
+                        placeholderTextColor={theme.colors.textLight}
+                        multiline
+                    />
+
+                    {/* Items */}
+                    <Text style={styles.sectionLabel}>Items (comma separated)</Text>
+                    <TextInput
+                        style={styles.input}
+                        value={itemsText}
+                        onChangeText={setItemsText}
+                        placeholder="rice, chicken, salad"
+                        placeholderTextColor={theme.colors.textLight}
+                    />
+
+                    {/* Meal type */}
+                    <Text style={styles.sectionLabel}>Meal type</Text>
+                    <View style={styles.typeRowReview}>
+                        {MEAL_TYPES.map((type) => (
+                            <TouchableOpacity
+                                key={type}
+                                style={[
+                                    styles.typeChipSmall,
+                                    selectedMealType === type && { backgroundColor: getMealTypeColor(type), borderColor: getMealTypeColor(type) },
+                                ]}
+                                onPress={() => setSelectedMealType(type)}
+                            >
+                                <Text
+                                    style={[
+                                        styles.typeChipText,
+                                        selectedMealType === type && styles.typeChipTextActive,
+                                    ]}
                                 >
-                                    <Text style={styles.removeImageText}>✕</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ) : null}
-
-                        <View style={styles.imageButtons}>
-                            <TouchableOpacity style={styles.imageButton} onPress={takePhoto}>
-                                <RNImage
-                                    source={cameraIcon}
-                                    style={styles.imageButtonIcon}
-                                />
-                                <Text style={styles.imageButtonText}>Take Photo</Text>
+                                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                                </Text>
                             </TouchableOpacity>
-
-                            <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-                                <RNImage
-                                    source={galleryIcon}
-                                    style={styles.imageButtonIcon}
-                                />
-                                <Text style={styles.imageButtonText}>Choose from Gallery</Text>
-                            </TouchableOpacity>
-                        </View>
+                        ))}
                     </View>
 
-                    {/* Analyze Button */}
-                    {imageUri && !result && (
-                        <TouchableOpacity
-                            style={[globalStyles.button, styles.analyzeButton]}
-                            onPress={analyzeImage}
-                            disabled={analyzing}
-                        >
-                            <View style={styles.analyzeButtonContent}>
-                                <RNImage
-                                    source={analyzeIcon}
-                                    style={styles.analyzeButtonIcon}
-                                />
-                                <Text style={globalStyles.buttonText}>
-                                    {analyzing ? 'Analyzing...' : 'Analyze Food'}
-                                </Text>
-                                {analyzing && (
-                                    <ActivityIndicator
-                                        color={theme.colors.white}
-                                        size="small"
-                                        style={{ marginLeft: theme.spacing.sm }}
-                                    />
-                                )}
-                            </View>
-                        </TouchableOpacity>
-                    )}
-
-                    {/* Analysis Result */}
-                    {result && (
-                        <View style={styles.resultContainer}>
-                            <Text style={styles.resultTitle}>Analysis Result</Text>
-
-                            <View style={styles.caloriesResult}>
-                                <Text style={styles.caloriesNumber}>{result.calories}</Text>
-                                <Text style={styles.caloriesLabel}>calories</Text>
-                            </View>
-
-                            <Text style={styles.resultDescription}>{result.description}</Text>
-
-                            {/* Macronutrients */}
-                            <View style={styles.macrosContainer}>
-                                <View style={styles.macroItem}>
-                                    <Text style={[styles.macroValue, { color: '#0A84FF' }]}>
-                                        {result.protein || 0}g
-                                    </Text>
-                                    <Text style={styles.macroLabel}>Protein</Text>
-                                </View>
-                                <View style={styles.macroItem}>
-                                    <Text style={[styles.macroValue, { color: '#FFD60A' }]}>
-                                        {result.carbs || 0}g
-                                    </Text>
-                                    <Text style={styles.macroLabel}>Carbs</Text>
-                                </View>
-                                <View style={styles.macroItem}>
-                                    <Text style={[styles.macroValue, { color: '#FF453A' }]}>
-                                        {result.fat || 0}g
-                                    </Text>
-                                    <Text style={styles.macroLabel}>Fat</Text>
-                                </View>
-                            </View>
-
-                            {result.items && result.items.length > 0 && (
-                                <View style={styles.itemsList}>
-                                    <Text style={styles.itemsTitle}>Detected Items:</Text>
-                                    {result.items.map((item, index) => (
-                                        <View key={index} style={styles.itemRow}>
-                                            <Text style={styles.itemBullet}>•</Text>
-                                            <Text style={styles.itemText}>{item}</Text>
-                                        </View>
-                                    ))}
-                                </View>
-                            )}
-
-                            <TouchableOpacity
-                                style={[globalStyles.button, styles.saveButton]}
-                                onPress={saveMealEntry}
-                            >
-                                <Text style={globalStyles.buttonText}>Save Meal ✓</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={globalStyles.buttonSecondary}
-                                onPress={() => {
-                                    setImageUri(null);
-                                    setResult(null);
-                                }}
-                            >
-                                <Text style={globalStyles.buttonSecondaryText}>Try Another Photo</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
+                    <TouchableOpacity
+                        style={[globalStyles.button, styles.saveButton, saving && styles.buttonDisabled]}
+                        onPress={saveMealEntry}
+                        disabled={saving}
+                    >
+                        <Text style={globalStyles.buttonText}>{saving ? 'Saving…' : 'Save Meal'}</Text>
+                    </TouchableOpacity>
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
 
+const MacroInput = ({ label, value, onChange, color }) => (
+    <View style={styles.macroInputCard}>
+        <View style={[styles.macroInputDot, { backgroundColor: color }]} />
+        <Text style={styles.macroInputLabel}>{label}</Text>
+        <TextInput
+            style={styles.macroInputField}
+            value={value}
+            onChangeText={(t) => onChange(t.replace(/[^0-9]/g, ''))}
+            keyboardType="number-pad"
+            placeholder="0"
+            placeholderTextColor={theme.colors.textLight}
+        />
+    </View>
+);
+
 const styles = StyleSheet.create({
+    flex1: { flex: 1 },
+
+    // Capture
+    captureContainer: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+        padding: theme.spacing.lg,
+    },
+    closeButton: {
+        alignSelf: 'flex-end',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: theme.colors.backgroundSecondary,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    captureHero: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    heroCircle: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: theme.colors.primarySoft,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: theme.spacing.lg,
+    },
+    heroCircleRing: {
+        borderWidth: 1.5,
+        borderColor: `${theme.colors.primary}30`,
+    },
+    captureTitle: {
+        fontSize: theme.fontSize.xxl,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+        textAlign: 'center',
+    },
+    captureSubtitle: {
+        fontSize: theme.fontSize.md,
+        color: theme.colors.textSecondary,
+        textAlign: 'center',
+        marginTop: theme.spacing.sm,
+        lineHeight: 22,
+        paddingHorizontal: theme.spacing.md,
+    },
+    captureActions: {
+        gap: theme.spacing.sm,
+        marginBottom: theme.spacing.lg,
+    },
+    primaryAction: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: theme.colors.primary,
+        paddingVertical: theme.spacing.md,
+        borderRadius: theme.borderRadius.lg,
+        gap: theme.spacing.sm,
+        ...theme.shadows.md,
+    },
+    primaryActionText: {
+        fontSize: theme.fontSize.lg,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.white,
+    },
+    secondaryAction: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: theme.colors.backgroundSecondary,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        paddingVertical: theme.spacing.md,
+        borderRadius: theme.borderRadius.lg,
+        gap: theme.spacing.sm,
+    },
+    secondaryActionText: {
+        fontSize: theme.fontSize.md,
+        fontWeight: theme.fontWeight.semibold,
+        color: theme.colors.text,
+    },
+    typeRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: theme.spacing.sm,
+    },
+    typeChip: {
+        paddingVertical: 8,
+        paddingHorizontal: theme.spacing.md,
+        borderRadius: theme.borderRadius.full,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.backgroundSecondary,
+    },
+    typeChipText: {
+        fontSize: theme.fontSize.sm,
+        fontWeight: theme.fontWeight.semibold,
+        color: theme.colors.textSecondary,
+    },
+    typeChipTextActive: {
+        color: theme.colors.white,
+    },
+
+    // Analyzing
+    analyzingContainer: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: theme.spacing.lg,
+    },
+    analyzingPreview: {
+        width: '100%',
+        height: 220,
+        borderRadius: theme.borderRadius.lg,
+        marginBottom: theme.spacing.lg,
+    },
+    analyzingHint: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textTertiary,
+        marginTop: theme.spacing.sm,
+        textAlign: 'center',
+    },
+
+    // Review
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
     },
-    contentContainer: {
+    reviewContent: {
         padding: theme.spacing.lg,
+        paddingBottom: theme.spacing.xxl,
     },
-    header: {
+    reviewHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: theme.spacing.xl,
-    },
-    backButton: {
-        fontSize: theme.fontSize.md,
-        color: theme.colors.primary,
-        fontWeight: theme.fontWeight.semibold,
-    },
-    title: {
-        fontSize: theme.fontSize.xxl,
-        fontWeight: theme.fontWeight.bold,
-        color: theme.colors.text,
-    },
-    section: {
-        marginBottom: theme.spacing.lg,
-        paddingTop: theme.spacing.md,
-    },
-    sectionTitle: {
-        fontSize: theme.fontSize.lg,
-        fontWeight: theme.fontWeight.semibold,
-        color: theme.colors.text,
         marginBottom: theme.spacing.md,
     },
-    mealTypeSelector: {
-        flexDirection: 'row',
-        gap: theme.spacing.sm,
-    },
-    mealTypeButton: {
-        flex: 1,
-        padding: theme.spacing.md,
-        borderRadius: theme.borderRadius.md,
-        backgroundColor: theme.colors.backgroundSecondary,
-        borderWidth: 2,
-        borderColor: theme.colors.border,
-        alignItems: 'center',
-    },
-    mealTypeIcon: {
-        width: 28,
-        height: 28,
-        marginBottom: theme.spacing.xs,
-        tintColor: '#FFFFFF',
-    },
-    mealTypeText: {
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.text,
-        fontWeight: theme.fontWeight.medium,
-    },
-    mealTypeTextSelected: {
-        color: theme.colors.white,
-    },
-    imageContainer: {
-        width: '100%',
-        height: 300,
-        borderRadius: theme.borderRadius.lg,
-        overflow: 'hidden',
-        marginBottom: theme.spacing.md,
-        backgroundColor: theme.colors.backgroundTertiary,
-    },
-    image: {
-        width: '100%',
-        height: '100%',
-    },
-    removeImageButton: {
-        position: 'absolute',
-        top: theme.spacing.sm,
-        right: theme.spacing.sm,
-        backgroundColor: theme.colors.error,
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    removeImageText: {
-        color: theme.colors.white,
-        fontSize: theme.fontSize.lg,
-        fontWeight: theme.fontWeight.bold,
-    },
-    imagePlaceholder: {
-        backgroundColor: theme.colors.backgroundSecondary,
-        borderRadius: theme.borderRadius.lg,
-        padding: theme.spacing.xl,
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: theme.colors.border,
-        borderStyle: 'dashed',
-        marginBottom: theme.spacing.md,
-    },
-    imagePlaceholderIcon: {
-        fontSize: 64,
-        marginBottom: theme.spacing.md,
-    },
-    imagePlaceholderText: {
-        fontSize: theme.fontSize.md,
-        color: theme.colors.textSecondary,
-        textAlign: 'center',
-    },
-    imageButtons: {
-        flexDirection: 'row',
-        gap: theme.spacing.sm,
-    },
-    imageButton: {
-        flex: 1,
-        backgroundColor: theme.colors.backgroundSecondary,
-        borderRadius: theme.borderRadius.md,
-        padding: theme.spacing.md,
-        alignItems: 'center',
-        ...theme.shadows.sm,
-    },
-    imageButtonIcon: {
-        width: 32,
-        height: 32,
-        marginBottom: theme.spacing.xs,
-        tintColor: '#FFFFFF',
-    },
-    imageButtonText: {
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.text,
-        fontWeight: theme.fontWeight.medium,
-    },
-    analyzeButton: {
-        marginBottom: theme.spacing.lg,
-    },
-    analyzeButtonContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.spacing.sm,
-    },
-    analyzeButtonIcon: {
-        width: 24,
-        height: 24,
-        tintColor: '#FFFFFF',
-    },
-    resultContainer: {
-        backgroundColor: theme.colors.backgroundSecondary,
-        borderRadius: theme.borderRadius.lg,
-        padding: theme.spacing.lg,
-        ...theme.shadows.md,
-    },
-    resultTitle: {
+    reviewTitle: {
         fontSize: theme.fontSize.xl,
         fontWeight: theme.fontWeight.bold,
         color: theme.colors.text,
-        marginBottom: theme.spacing.md,
-        textAlign: 'center',
     },
-    caloriesResult: {
+    retakeButton: {
+        flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: theme.spacing.lg,
-        paddingVertical: theme.spacing.lg,
-        backgroundColor: theme.colors.backgroundSecondary,
-        borderRadius: theme.borderRadius.md,
+        gap: 5,
+        backgroundColor: theme.colors.primarySoft,
+        paddingHorizontal: theme.spacing.sm + 2,
+        paddingVertical: 6,
+        borderRadius: theme.borderRadius.full,
     },
-    caloriesNumber: {
-        fontSize: 48,
-        fontWeight: theme.fontWeight.bold,
+    retakeText: {
+        fontSize: theme.fontSize.sm,
+        fontWeight: theme.fontWeight.semibold,
         color: theme.colors.primary,
     },
-    caloriesLabel: {
-        fontSize: theme.fontSize.md,
-        color: theme.colors.textSecondary,
+    previewImage: {
+        width: '100%',
+        height: 180,
+        borderRadius: theme.borderRadius.lg,
+        marginBottom: theme.spacing.md,
     },
-    resultDescription: {
-        fontSize: theme.fontSize.md,
-        color: theme.colors.textSecondary,
-        marginBottom: theme.spacing.lg,
-        textAlign: 'center',
-        lineHeight: 22,
-    },
-    macrosContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        backgroundColor: theme.colors.backgroundTertiary,
-        borderRadius: theme.borderRadius.md,
-        padding: theme.spacing.md,
-        marginBottom: theme.spacing.lg,
-    },
-    macroItem: {
-        alignItems: 'center',
-    },
-    macroValue: {
-        fontSize: theme.fontSize.xl,
-        fontWeight: theme.fontWeight.bold,
-    },
-    macroLabel: {
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.textSecondary,
-        marginTop: theme.spacing.xs,
-    },
-    itemsList: {
-        marginBottom: theme.spacing.lg,
-    },
-    itemsTitle: {
-        fontSize: theme.fontSize.md,
-        fontWeight: theme.fontWeight.semibold,
-        color: theme.colors.text,
-        marginBottom: theme.spacing.sm,
-    },
-    itemRow: {
+    suggestionStrip: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        marginBottom: theme.spacing.xs,
+        gap: theme.spacing.sm,
+        backgroundColor: theme.colors.primarySoft,
+        borderRadius: theme.borderRadius.md,
+        padding: theme.spacing.md - 2,
+        marginBottom: theme.spacing.md,
     },
-    itemBullet: {
-        fontSize: theme.fontSize.md,
+    suggestionStripText: {
+        flex: 1,
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
+        lineHeight: 19,
+    },
+    suggestionStripStrong: {
+        fontWeight: theme.fontWeight.bold,
         color: theme.colors.primary,
+    },
+    sectionLabel: {
+        fontSize: theme.fontSize.sm,
+        fontWeight: theme.fontWeight.semibold,
+        color: theme.colors.textSecondary,
+        marginBottom: theme.spacing.sm,
+    },
+    macroGrid: {
+        gap: theme.spacing.sm,
+        marginBottom: theme.spacing.lg,
+    },
+    macroInputCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: theme.colors.backgroundSecondary,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: theme.borderRadius.md,
+        paddingHorizontal: theme.spacing.md,
+        height: 52,
+    },
+    macroInputDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
         marginRight: theme.spacing.sm,
     },
-    itemText: {
+    macroInputLabel: {
+        flex: 1,
+        fontSize: theme.fontSize.md,
+        fontWeight: theme.fontWeight.medium,
+        color: theme.colors.textSecondary,
+    },
+    macroInputField: {
+        fontSize: theme.fontSize.xl,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+        minWidth: 90,
+        textAlign: 'right',
+    },
+    input: {
+        backgroundColor: theme.colors.backgroundSecondary,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: theme.borderRadius.md,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm + 2,
         fontSize: theme.fontSize.md,
         color: theme.colors.text,
-        flex: 1,
+        marginBottom: theme.spacing.md,
+    },
+    textArea: {
+        minHeight: 70,
+        paddingTop: theme.spacing.sm + 2,
+        textAlignVertical: 'top',
+    },
+    typeRowReview: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: theme.spacing.sm,
+        marginBottom: theme.spacing.lg,
+    },
+    typeChipSmall: {
+        paddingVertical: 8,
+        paddingHorizontal: theme.spacing.md,
+        borderRadius: theme.borderRadius.full,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.backgroundSecondary,
     },
     saveButton: {
-        marginBottom: theme.spacing.sm,
+        marginTop: theme.spacing.sm,
+    },
+    buttonDisabled: {
+        opacity: 0.6,
     },
 });

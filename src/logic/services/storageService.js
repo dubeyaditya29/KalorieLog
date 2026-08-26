@@ -8,7 +8,7 @@ import {
     getUserMeals
 } from './api/mealService';
 
-const STORAGE_KEY = '@biteLog_meals';
+const STORAGE_KEY = '@kyra_meals';
 
 /**
  * Get current user ID from Supabase

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "KalorieLog",
-    "slug": "kalorieLog",
+    "name": "Kyra",
+    "slug": "kyra",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,14 +12,14 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "bundleIdentifier": "com.kalorielog.app"
+      "bundleIdentifier": "com.kyra.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.kalorielog.app",
+      "package": "com.kyra.app",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
@@ -32,7 +32,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow KalorieLog to access your camera to take photos of your meals."
+          "cameraPermission": "Allow Kyra to access your camera to take photos of your meals."
         }
       ]
     ],

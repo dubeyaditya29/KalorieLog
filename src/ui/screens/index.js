@@ -1,12 +1,16 @@
 // Auth Screens
 export { LoginScreen } from './auth/LoginScreen';
-export { OnboardingScreen } from './auth/OnboardingScreen';
-export { VerifyEmailScreen } from './auth/VerifyEmailScreen';
 
-// Home Screens
-export { HomeScreen } from './home/HomeScreen';
+// Welcome / product tour
+export { WelcomeScreen } from './welcome/WelcomeScreen';
 
-// Meal Screens  
+// Nutrition Screens
+export { NutritionScreen } from './nutrition/NutritionScreen';
+
+// Chat Screens
+export { ChatScreen } from './chat/ChatScreen';
+
+// Meal Screens
 export { AddMealScreen } from './meal/AddMealScreen';
 
 // Profile Screens
