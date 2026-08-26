@@ -118,4 +118,4 @@ All UI icons are hand-drawn stroke SVGs in `src/ui/components/icons/index.js` (2
 
 ## Git Notes
 
-Remote: `https://github.com/dubeyaditya29/biteLog.git` (repo name predates the Kyra rebrand). App identity: bundle/package `com.kyra.app`, EAS project in `app.json` (owner `adityadubey29`) with `eas.json` for APK builds. Note: changing the bundle identifier means previously installed dev builds won't receive updates — reinstall required.
+Remote: `https://github.com/dubeyaditya29/KalorieLog.git` (repo was renamed from `biteLog`). App identity: bundle/package `com.kyra.app`, EAS project in `app.json` (owner `adityadubey29`) with `eas.json` for APK builds. Note: changing the bundle identifier means previously installed dev builds won't receive updates — reinstall required.
