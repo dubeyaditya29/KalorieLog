@@ -14,6 +14,7 @@ import { WelcomeScreen } from './src/ui/screens/welcome/WelcomeScreen';
 import { NutritionScreen } from './src/ui/screens/nutrition/NutritionScreen';
 import { ChatScreen } from './src/ui/screens/chat/ChatScreen';
 import { ProfileScreen } from './src/ui/screens/profile/ProfileScreen';
+import { EditProfileScreen } from './src/ui/screens/profile/EditProfileScreen';
 import { AddMealScreen } from './src/ui/screens/meal/AddMealScreen';
 
 // Modal Provider
@@ -132,6 +133,7 @@ function Navigation() {
         ) : (
           <>
             <Stack.Screen name="MainTabs" component={MainTabs} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
             <Stack.Screen
               name="AddMeal"
               component={AddMealScreen}
