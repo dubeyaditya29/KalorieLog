@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
-import { theme } from '../../styles/theme';
+import { useThemedStyles } from '../../styles/useThemedStyles';
 
 export const CircularProgress = ({
     current,
@@ -9,6 +9,7 @@ export const CircularProgress = ({
     size = 200,
     strokeWidth = 16
 }) => {
+    const { theme, styles } = useThemedStyles(createStyles);
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
     const percentage = Math.min((current / goal) * 100, 100);
@@ -61,7 +62,7 @@ export const CircularProgress = ({
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => ({
     container: {
         alignItems: 'center',
         justifyContent: 'center',

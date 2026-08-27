@@ -7,13 +7,14 @@ import {
     Modal,
     Animated,
 } from 'react-native';
-import { theme } from '../../styles/theme';
+import { useThemedStyles } from '../../styles/useThemedStyles';
 
 /**
  * Themed Modal Component
  * A dark-themed modal that matches the app's design language
  */
 export const ThemedModal = ({ visible, title, message, buttons = [], onClose }) => {
+    const { styles } = useThemedStyles(createStyles);
     return (
         <Modal
             visible={visible}
@@ -153,7 +154,7 @@ export const useModal = () => {
     return context;
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => ({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.75)',

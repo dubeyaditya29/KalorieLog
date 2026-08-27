@@ -1,17 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { theme } from '../../styles/theme';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { useThemedStyles } from '../../styles/useThemedStyles';
 import { ChevronRightIcon } from '../icons';
 
 /**
  * A single tappable row for use inside a SectionCard.
- *
- * @param {Component} icon - icon component rendered in a tinted circle
- * @param {string} title - primary label
- * @param {string} subtitle - secondary line under the title
- * @param {string} value - right-aligned summary text (e.g. "25 yrs · 70 kg")
- * @param {boolean} destructive - renders title/icon/value in error color
- * @param {boolean} last - removes the bottom divider (use on the final row)
  */
 export const SettingsRow = ({
     icon: Icon,
@@ -22,15 +15,23 @@ export const SettingsRow = ({
     disabled = false,
     destructive = false,
     last = false,
+    right = null,
 }) => {
+    const { theme, styles } = useThemedStyles(createStyles);
     const accent = destructive ? theme.colors.error : theme.colors.primary;
+    const tappable = Boolean(onPress) && !disabled && !right;
+    const Row = tappable ? TouchableOpacity : View;
 
     return (
-        <TouchableOpacity
+        <Row
             style={[styles.row, !last && styles.divider]}
-            onPress={onPress}
-            disabled={disabled || !onPress}
-            activeOpacity={onPress && !disabled ? 0.6 : 1}
+            {...(tappable
+                ? {
+                    onPress,
+                    disabled,
+                    activeOpacity: 0.6,
+                }
+                : {})}
         >
             {Icon && (
                 <View style={[styles.iconWrap, destructive && styles.iconWrapDestructive]}>
@@ -48,14 +49,15 @@ export const SettingsRow = ({
                     {value}
                 </Text>
             ) : null}
-            {onPress && !disabled && (
+            {right}
+            {onPress && !disabled && !right && (
                 <ChevronRightIcon size={15} color={theme.colors.textLight} strokeWidth={2} />
             )}
-        </TouchableOpacity>
+        </Row>
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => ({
     row: {
         flexDirection: 'row',
         alignItems: 'center',

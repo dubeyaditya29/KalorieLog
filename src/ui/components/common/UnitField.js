@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { theme } from '../../styles/theme';
+import { useThemedStyles } from '../../styles/useThemedStyles';
 
 const round1 = (n) => Math.round(n * 10) / 10;
 
@@ -14,6 +14,7 @@ const round1 = (n) => Math.round(n * 10) / 10;
  * @param {Function} onChange - receives canonical value in cm or kg (number|null)
  */
 export const UnitField = ({ label, kind, canonicalValue, onChange }) => {
+    const { theme, styles } = useThemedStyles(createStyles);
     const isHeight = kind === 'height';
     const [unit, setUnit] = useState(isHeight ? 'cm' : 'kg');
     const [display, setDisplay] = useState('');
@@ -91,7 +92,7 @@ export const UnitField = ({ label, kind, canonicalValue, onChange }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => ({
     wrapper: {
         marginBottom: theme.spacing.md,
     },

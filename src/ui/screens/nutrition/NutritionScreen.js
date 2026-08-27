@@ -14,8 +14,8 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useHeaderHeight } from '@react-navigation/elements';
-import { theme, getMealTypeColor } from '../../styles/theme';
-import { globalStyles } from '../../styles/globalStyles';
+import { getMealTypeColor } from '../../styles/theme';
+import { useThemedStyles } from '../../styles/useThemedStyles';
 import { useAuth } from '../../../logic/contexts/AuthContext';
 import { getProfile, upsertProfile } from '../../../logic/services/api/profileService';
 import { getMealsByDate, getTotalCaloriesByDate } from '../../../logic/services/storageService';
@@ -44,6 +44,7 @@ const MEAL_SECTIONS = [
 ];
 
 export const NutritionScreen = ({ navigation }) => {
+    const { theme, styles, globalStyles } = useThemedStyles(createStyles);
     const { user, refreshProfile } = useAuth();
     const headerHeight = useHeaderHeight();
     const [profile, setProfile] = useState(null);
@@ -374,9 +375,9 @@ export const NutritionScreen = ({ navigation }) => {
                         and {remainingProtein > 0 ? `${remainingProtein}g left today` : 'protein goal reached 🎉'}
                     </Text>
 
-                    <MacroBar label="Protein" current={sumMacro(meals, 'protein')} goal={suggestions.protein} color={theme.colors.lunch} />
-                    <MacroBar label="Carbs" current={sumMacro(meals, 'carbs')} goal={suggestions.carbs} color={theme.colors.amber} />
-                    <MacroBar label="Fat" current={sumMacro(meals, 'fat')} goal={suggestions.fat} color={theme.colors.error} />
+                    <MacroBar styles={styles} label="Protein" current={sumMacro(meals, 'protein')} goal={suggestions.protein} color={theme.colors.lunch} />
+                    <MacroBar styles={styles} label="Carbs" current={sumMacro(meals, 'carbs')} goal={suggestions.carbs} color={theme.colors.amber} />
+                    <MacroBar styles={styles} label="Fat" current={sumMacro(meals, 'fat')} goal={suggestions.fat} color={theme.colors.error} />
 
                     <View style={styles.remainingRow}>
                         <Text style={styles.remainingText}>Left today:</Text>
@@ -407,18 +408,18 @@ export const NutritionScreen = ({ navigation }) => {
                         return (
                             <View key={key} style={styles.mealSection}>
                                 <View style={styles.mealSectionHeader}>
-                                    <View style={[styles.mealIconWrap, { backgroundColor: `${getMealTypeColor(key)}14` }]}>
-                                        <TypeIcon size={16} color={getMealTypeColor(key)} strokeWidth={2} />
+                                    <View style={[styles.mealIconWrap, { backgroundColor: `${getMealTypeColor(key, theme.colors)}14` }]}>
+                                        <TypeIcon size={16} color={getMealTypeColor(key, theme.colors)} strokeWidth={2} />
                                     </View>
                                     <Text style={styles.mealSectionTitle}>{label}</Text>
                                     {sectionTotal > 0 && (
                                         <Text style={styles.mealSectionCalories}>{sectionTotal} cal</Text>
                                     )}
                                     <TouchableOpacity
-                                        style={[styles.addMealChip, { backgroundColor: `${getMealTypeColor(key)}14` }]}
+                                        style={[styles.addMealChip, { backgroundColor: `${getMealTypeColor(key, theme.colors)}14` }]}
                                         onPress={() => navigation.navigate('AddMeal', { mealType: key })}
                                     >
-                                        <Text style={[styles.addMealChipText, { color: getMealTypeColor(key) }]}>+ Add</Text>
+                                        <Text style={[styles.addMealChipText, { color: getMealTypeColor(key, theme.colors) }]}>+ Add</Text>
                                     </TouchableOpacity>
                                 </View>
                                 {typeMeals.map((meal) => (
@@ -436,7 +437,7 @@ export const NutritionScreen = ({ navigation }) => {
 const sumMacro = (meals, macro) =>
     meals.reduce((sum, meal) => sum + (meal[macro] || 0), 0);
 
-const MacroBar = ({ label, current, goal, color }) => {
+const MacroBar = ({ styles, label, current, goal, color }) => {
     const pct = goal > 0 ? Math.min((current / goal) * 100, 100) : 0;
     return (
         <View style={styles.macroBarRow}>
@@ -449,7 +450,7 @@ const MacroBar = ({ label, current, goal, color }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => ({
     flex1: { flex: 1 },
     container: {
         flex: 1,

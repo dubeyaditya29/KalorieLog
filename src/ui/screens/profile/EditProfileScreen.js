@@ -9,13 +9,13 @@ import {
     ScrollView,
     ActivityIndicator,
 } from 'react-native';
-import { theme } from '../../styles/theme';
-import { globalStyles } from '../../styles/globalStyles';
+import { useThemedStyles } from '../../styles/useThemedStyles';
 import { useAuth } from '../../../logic/contexts/AuthContext';
 import { getProfile, updateProfile } from '../../../logic/services/api/profileService';
 import { useModal } from '../../components/common/ThemedModal';
 import { UnitField } from '../../components/common/UnitField';
 import { ChevronLeftIcon, FlameIcon } from '../../components/icons';
+import { ThemeToggle } from '../../components/common/ScreenHeader';
 import { calculateBMR, calculateCalorieGoal } from '../../../logic/utils/bmiCalculator';
 import { ACTIVITY_LEVELS } from '../../../logic/utils/macroGoals';
 
@@ -27,6 +27,7 @@ const GENDER_OPTIONS = [
 const digitsOnly = (setter) => (text) => setter(text.replace(/[^0-9]/g, ''));
 
 export const EditProfileScreen = ({ navigation }) => {
+    const { theme, styles, globalStyles } = useThemedStyles(createStyles);
     const { user, refreshProfile } = useAuth();
     const { showAlert } = useModal();
     const [loading, setLoading] = useState(true);
@@ -135,7 +136,7 @@ export const EditProfileScreen = ({ navigation }) => {
                     <ChevronLeftIcon size={22} color={theme.colors.text} strokeWidth={2} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Personal Details</Text>
-                <View style={styles.headerSpacer} />
+                <ThemeToggle />
             </View>
 
             <ScrollView
@@ -274,7 +275,7 @@ export const EditProfileScreen = ({ navigation }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => ({
     loadingContainer: {
         justifyContent: 'center',
         alignItems: 'center',

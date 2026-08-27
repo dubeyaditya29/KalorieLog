@@ -2,22 +2,20 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
     View,
     Text,
-    StyleSheet,
     FlatList,
     TextInput,
     TouchableOpacity,
-    KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
-    SafeAreaView,
+    Keyboard,
+    Dimensions,
 } from 'react-native';
-import { useHeaderHeight } from '@react-navigation/elements';
-import { theme } from '../../styles/theme';
-import { globalStyles } from '../../styles/globalStyles';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useThemedStyles } from '../../styles/useThemedStyles';
 import { useAuth } from '../../../logic/contexts/AuthContext';
 import { chatWithNutritionist } from '../../../logic/services/api/geminiService';
 import { getProfile } from '../../../logic/services/api/profileService';
-import { ChatIcon, SendIcon } from '../../components/icons';
+import { SendIcon } from '../../components/icons';
 
 const GREETING = {
     id: 'greeting',
@@ -25,19 +23,50 @@ const GREETING = {
     text: "Hi, I'm Kyra 🌿 — your personal health companion.\n\nAsk me anything: meal ideas, protein tips, or how to hit today's targets.",
 };
 
+const keyboardOverlap = (e) => {
+    const windowHeight = Dimensions.get('window').height;
+    const { height, screenY } = e.endCoordinates;
+    const fromScreen = Math.max(0, windowHeight - screenY);
+    return Math.max(height || 0, fromScreen);
+};
+
 export const ChatScreen = () => {
+    const { theme, styles } = useThemedStyles(createStyles);
     const { user } = useAuth();
-    const headerHeight = useHeaderHeight();
     const [messages, setMessages] = useState([GREETING]);
     const [input, setInput] = useState('');
     const [sending, setSending] = useState(false);
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
     const listRef = useRef(null);
 
     useEffect(() => {
-        setTimeout(() => {
+        const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+        const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+        const changeEvent = Platform.OS === 'ios' ? 'keyboardWillChangeFrame' : 'keyboardDidShow';
+
+        const onShow = (e) => setKeyboardHeight(keyboardOverlap(e));
+        const onHide = () => setKeyboardHeight(0);
+
+        const show = Keyboard.addListener(showEvent, onShow);
+        const hide = Keyboard.addListener(hideEvent, onHide);
+        const change = Keyboard.addListener(changeEvent, (e) => {
+            const next = keyboardOverlap(e);
+            setKeyboardHeight(next > 80 ? next : 0);
+        });
+
+        return () => {
+            show.remove();
+            hide.remove();
+            change.remove();
+        };
+    }, []);
+
+    useEffect(() => {
+        const id = setTimeout(() => {
             listRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-    }, [messages]);
+        }, 50);
+        return () => clearTimeout(id);
+    }, [messages, keyboardHeight]);
 
     const sendMessage = async () => {
         const text = input.trim();
@@ -76,12 +105,8 @@ export const ChatScreen = () => {
     };
 
     return (
-        <SafeAreaView style={globalStyles.safeArea}>
-            <KeyboardAvoidingView
-                style={styles.container}
-                behavior="padding"
-                keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}
-            >
+        <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+            <View style={[styles.container, { paddingBottom: keyboardHeight }]}>
                 <FlatList
                     ref={listRef}
                     data={messages}
@@ -89,6 +114,7 @@ export const ChatScreen = () => {
                     contentContainerStyle={styles.messageList}
                     onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
                     keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="interactive"
                     renderItem={({ item }) => (
                         <View
                             style={[
@@ -129,12 +155,16 @@ export const ChatScreen = () => {
                         <SendIcon size={17} color={theme.colors.white} strokeWidth={2.2} />
                     </TouchableOpacity>
                 </View>
-            </KeyboardAvoidingView>
+            </View>
         </SafeAreaView>
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => ({
+    safeArea: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
@@ -143,6 +173,7 @@ const styles = StyleSheet.create({
         paddingVertical: theme.spacing.md,
         paddingHorizontal: theme.spacing.md,
         gap: theme.spacing.sm,
+        flexGrow: 1,
     },
     bubble: {
         maxWidth: '80%',
@@ -182,7 +213,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
         paddingHorizontal: theme.spacing.md,
         paddingTop: theme.spacing.sm,
-        paddingBottom: theme.spacing.md,
+        paddingBottom: theme.spacing.sm,
         gap: theme.spacing.sm,
         borderTopWidth: 1,
         borderTopColor: theme.colors.borderLight,

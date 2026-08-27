@@ -2,14 +2,12 @@ import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
-    TouchableOpacity,
     StyleSheet,
     SafeAreaView,
     ScrollView,
     ActivityIndicator,
 } from 'react-native';
-import { theme } from '../../styles/theme';
-import { globalStyles } from '../../styles/globalStyles';
+import { useThemedStyles } from '../../styles/useThemedStyles';
 import { useAuth } from '../../../logic/contexts/AuthContext';
 import { getProfile } from '../../../logic/services/api/profileService';
 import { signOut } from '../../../logic/services/api/authService';
@@ -19,6 +17,7 @@ import { ProfileIcon, LogoutIcon } from '../../components/icons';
 import { calculateBMI, getBMICategory, getBMIColor } from '../../../logic/utils/bmiCalculator';
 
 export const ProfileScreen = ({ navigation }) => {
+    const { theme, styles, globalStyles } = useThemedStyles(createStyles);
     const { user, profileVersion } = useAuth();
     const { showDestructive } = useModal();
     const [loading, setLoading] = useState(true);
@@ -124,6 +123,7 @@ export const ProfileScreen = ({ navigation }) => {
                         subtitle={isComplete ? null : 'Tap to finish setting up'}
                         value={detailsSummary}
                         onPress={() => navigation.navigate('EditProfile')}
+                        last
                     />
                 </SectionCard>
 
@@ -142,7 +142,7 @@ export const ProfileScreen = ({ navigation }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => ({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,

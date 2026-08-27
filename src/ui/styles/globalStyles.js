@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
-import { theme } from './theme';
+import { createTheme } from './theme';
 
-export const globalStyles = StyleSheet.create({
+export const createGlobalStyles = (theme) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
@@ -198,3 +198,5 @@ export const globalStyles = StyleSheet.create({
     py4: { paddingVertical: theme.spacing.lg },
     py5: { paddingVertical: theme.spacing.xl },
 });
+
+export const globalStyles = createGlobalStyles(createTheme('light'));

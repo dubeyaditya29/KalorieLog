@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { theme } from '../../styles/theme';
+import { useThemedStyles } from '../../styles/useThemedStyles';
 import { SparklesIcon } from '../icons';
 
 /**
@@ -9,6 +9,7 @@ import { SparklesIcon } from '../icons';
  * Combines an expanding pulse ring, a spinning arc and a breathing inner disc.
  */
 export const AnalysisLoader = ({ size = 140, label = 'Analyzing your meal…' }) => {
+    const { theme, styles } = useThemedStyles(createStyles);
     const spin = useRef(new Animated.Value(0)).current;
     const pulse = useRef(new Animated.Value(0)).current;
     const breathe = useRef(new Animated.Value(0)).current;
@@ -146,7 +147,7 @@ export const AnalysisLoader = ({ size = 140, label = 'Analyzing your meal…' })
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => ({
     container: {
         alignItems: 'center',
         justifyContent: 'center',
