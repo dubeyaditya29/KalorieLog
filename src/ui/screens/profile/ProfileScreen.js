@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
-    TextInput,
     TouchableOpacity,
     StyleSheet,
     SafeAreaView,
@@ -12,26 +11,22 @@ import {
 import { theme } from '../../styles/theme';
 import { globalStyles } from '../../styles/globalStyles';
 import { useAuth } from '../../../logic/contexts/AuthContext';
-import { getProfile, updateProfile } from '../../../logic/services/api/profileService';
+import { getProfile } from '../../../logic/services/api/profileService';
 import { signOut } from '../../../logic/services/api/authService';
 import { useModal } from '../../components/common/ThemedModal';
-import { calculateBMI, getBMICategory, getBMIColor, calculateBMR, calculateCalorieGoal } from '../../../logic/utils/bmiCalculator';
+import { SectionCard, SettingsRow } from '../../components/common';
+import { ProfileIcon, LogoutIcon } from '../../components/icons';
+import { calculateBMI, getBMICategory, getBMIColor } from '../../../logic/utils/bmiCalculator';
 
 export const ProfileScreen = ({ navigation }) => {
-    const { user } = useAuth();
-    const { showAlert, showDestructive } = useModal();
+    const { user, profileVersion } = useAuth();
+    const { showDestructive } = useModal();
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-
-    const [name, setName] = useState('');
-    const [age, setAge] = useState('');
-    const [height, setHeight] = useState('');
-    const [weight, setWeight] = useState('');
-    const [calorieGoal, setCalorieGoal] = useState('');
+    const [profile, setProfile] = useState(null);
 
     useEffect(() => {
         loadProfile();
-    }, []);
+    }, [profileVersion]);
 
     const loadProfile = async () => {
         try {
@@ -42,13 +37,7 @@ export const ProfileScreen = ({ navigation }) => {
                 return;
             }
 
-            if (data) {
-                setName(data.name || '');
-                setAge(data.age?.toString() || '');
-                setHeight(data.height_cm?.toString() || '');
-                setWeight(data.weight_kg?.toString() || '');
-                setCalorieGoal(data.calorie_goal?.toString() || '2300');
-            }
+            setProfile(data);
         } catch (error) {
             console.error('Error loading profile:', error);
         } finally {
@@ -56,36 +45,7 @@ export const ProfileScreen = ({ navigation }) => {
         }
     };
 
-    const handleSave = async () => {
-        if (!name || !age || !height || !weight) {
-            showAlert('Missing Information', 'Please fill in all fields');
-            return;
-        }
-
-        setSaving(true);
-
-        try {
-            const { error } = await updateProfile(user.id, {
-                name,
-                age: parseInt(age),
-                height_cm: parseFloat(height),
-                weight_kg: parseFloat(weight),
-                calorie_goal: parseInt(calorieGoal) || 2300,
-            });
-
-            if (error) {
-                showAlert('Oops!', error.message);
-            } else {
-                showAlert('🎉 Saved!', 'Your profile has been updated successfully.');
-            }
-        } catch (error) {
-            showAlert('Something Went Wrong', error.message);
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleSignOut = async () => {
+    const handleSignOut = () => {
         showDestructive(
             'Sign Out',
             'Are you sure you want to sign out?',
@@ -94,14 +54,24 @@ export const ProfileScreen = ({ navigation }) => {
         );
     };
 
-    const getSuggestedCalories = () => {
-        if (!weight || !height || !age) return 2300;
-        const bmr = calculateBMR(parseFloat(weight), parseFloat(height), parseInt(age));
-        return calculateCalorieGoal(bmr, 'moderate');
-    };
+    const displayName = profile?.name?.trim() || '';
+    const initials =
+        displayName
+            .split(' ')
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((w) => w[0].toUpperCase())
+            .join('') || user?.email?.[0]?.toUpperCase() || '?';
 
-    const currentBMI = height && weight
-        ? calculateBMI(parseFloat(weight), parseFloat(height))
+    const isComplete = !!(displayName && profile?.age && profile?.height_cm && profile?.weight_kg);
+
+    const currentBMI =
+        profile?.height_cm && profile?.weight_kg
+            ? calculateBMI(profile.weight_kg, profile.height_cm)
+            : null;
+
+    const detailsSummary = isComplete
+        ? `${profile.age} yrs · ${Math.round(profile.height_cm)} cm · ${Math.round(profile.weight_kg)} kg`
         : null;
 
     if (loading) {
@@ -114,109 +84,59 @@ export const ProfileScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView style={globalStyles.safeArea}>
-            <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+            <ScrollView
+                style={styles.container}
+                contentContainerStyle={styles.content}
+            >
                 {/* Header */}
                 <View style={styles.header}>
                     <Text style={styles.title}>Profile</Text>
                     <Text style={styles.email}>{user?.email}</Text>
                 </View>
 
-                {/* BMI Card */}
-                {currentBMI && (
-                    <View style={styles.bmiCard}>
-                        <Text style={styles.bmiLabel}>Your BMI</Text>
-                        <Text style={[styles.bmiValue, { color: getBMIColor(currentBMI) }]}>
-                            {currentBMI.toFixed(1)}
+                {/* Identity card */}
+                <View style={styles.identityCard}>
+                    <View style={styles.avatar}>
+                        <Text style={styles.avatarText}>{initials}</Text>
+                    </View>
+                    <View style={styles.identityInfo}>
+                        <Text style={styles.identityName} numberOfLines={1}>
+                            {displayName || 'Welcome!'}
                         </Text>
-                        <Text style={styles.bmiCategory}>{getBMICategory(currentBMI)}</Text>
-                    </View>
-                )}
-
-                {/* Form */}
-                <View style={styles.form}>
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Name</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={name}
-                            onChangeText={setName}
-                            placeholder="Your name"
-                            placeholderTextColor={theme.colors.textTertiary}
-                        />
-                    </View>
-
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Age</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={age}
-                            onChangeText={setAge}
-                            placeholder="25"
-                            placeholderTextColor={theme.colors.textTertiary}
-                            keyboardType="number-pad"
-                        />
-                    </View>
-
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Height (cm)</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={height}
-                            onChangeText={setHeight}
-                            placeholder="170"
-                            placeholderTextColor={theme.colors.textTertiary}
-                            keyboardType="decimal-pad"
-                        />
-                    </View>
-
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Weight (kg)</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={weight}
-                            onChangeText={setWeight}
-                            placeholder="70"
-                            placeholderTextColor={theme.colors.textTertiary}
-                            keyboardType="decimal-pad"
-                        />
-                    </View>
-
-                    <View style={styles.inputContainer}>
-                        <View style={styles.labelRow}>
-                            <Text style={styles.label}>Daily Calorie Goal</Text>
-                            <Text style={styles.suggestion}>
-                                Suggested: {getSuggestedCalories()} cal (based on BMI)
-                            </Text>
-                        </View>
-                        <TextInput
-                            style={styles.input}
-                            value={calorieGoal}
-                            onChangeText={setCalorieGoal}
-                            placeholder="2300"
-                            placeholderTextColor={theme.colors.textTertiary}
-                            keyboardType="number-pad"
-                        />
-                    </View>
-
-                    <TouchableOpacity
-                        style={[globalStyles.button, styles.saveButton]}
-                        onPress={handleSave}
-                        disabled={saving}
-                    >
-                        {saving ? (
-                            <ActivityIndicator color={theme.colors.white} />
+                        {currentBMI ? (
+                            <View style={styles.bmiBadge}>
+                                <View style={[styles.bmiDot, { backgroundColor: getBMIColor(currentBMI) }]} />
+                                <Text style={styles.bmiText}>
+                                    BMI {currentBMI.toFixed(1)} · {getBMICategory(currentBMI)}
+                                </Text>
+                            </View>
                         ) : (
-                            <Text style={globalStyles.buttonText}>Save Changes</Text>
+                            <Text style={styles.identityPrompt}>Set up your details to get started</Text>
                         )}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[globalStyles.buttonOutline, styles.signOutButton]}
-                        onPress={handleSignOut}
-                    >
-                        <Text style={styles.signOutText}>Sign Out</Text>
-                    </TouchableOpacity>
+                    </View>
                 </View>
+
+                {/* Personal section */}
+                <SectionCard title="Personal">
+                    <SettingsRow
+                        icon={ProfileIcon}
+                        title="Personal Details"
+                        subtitle={isComplete ? null : 'Tap to finish setting up'}
+                        value={detailsSummary}
+                        onPress={() => navigation.navigate('EditProfile')}
+                    />
+                </SectionCard>
+
+                {/* Account section */}
+                <SectionCard title="Account">
+                    <SettingsRow
+                        icon={LogoutIcon}
+                        title="Sign Out"
+                        destructive
+                        last
+                        onPress={handleSignOut}
+                    />
+                </SectionCard>
             </ScrollView>
         </SafeAreaView>
     );
@@ -235,6 +155,7 @@ const styles = StyleSheet.create({
     },
     content: {
         padding: theme.spacing.lg,
+        paddingBottom: theme.spacing.xxl,
     },
     header: {
         marginBottom: theme.spacing.xl,
@@ -249,73 +170,54 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSize.md,
         color: theme.colors.textSecondary,
     },
-    bmiCard: {
+    identityCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: theme.colors.backgroundSecondary,
         borderRadius: theme.borderRadius.lg,
-        padding: theme.spacing.lg,
-        alignItems: 'center',
+        padding: theme.spacing.md + 2,
         marginBottom: theme.spacing.xl,
-        ...theme.shadows.md,
+        ...theme.shadows.sm,
     },
-    bmiLabel: {
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.textSecondary,
-        marginBottom: theme.spacing.xs,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-    },
-    bmiValue: {
-        fontSize: theme.fontSize.huge,
-        fontWeight: theme.fontWeight.bold,
-        marginBottom: theme.spacing.xs,
-    },
-    bmiCategory: {
-        fontSize: theme.fontSize.md,
-        color: theme.colors.textSecondary,
-    },
-    form: {
-        width: '100%',
-    },
-    inputContainer: {
-        marginBottom: theme.spacing.lg,
-    },
-    labelRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    avatar: {
+        width: 56,
+        height: 56,
+        borderRadius: theme.borderRadius.full,
+        backgroundColor: theme.colors.primarySoft,
         alignItems: 'center',
-        marginBottom: theme.spacing.sm,
+        justifyContent: 'center',
+        marginRight: theme.spacing.md - 2,
     },
-    label: {
-        fontSize: theme.fontSize.sm,
-        fontWeight: theme.fontWeight.semibold,
-        color: theme.colors.textSecondary,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-    },
-    suggestion: {
-        fontSize: theme.fontSize.xs,
+    avatarText: {
+        fontSize: theme.fontSize.xl,
+        fontWeight: theme.fontWeight.bold,
         color: theme.colors.primary,
-        fontStyle: 'italic',
     },
-    input: {
-        backgroundColor: theme.colors.backgroundSecondary,
-        borderRadius: theme.borderRadius.md,
-        padding: theme.spacing.md,
-        fontSize: theme.fontSize.md,
-        color: theme.colors.text,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
+    identityInfo: {
+        flex: 1,
     },
-    saveButton: {
-        marginTop: theme.spacing.md,
-        marginBottom: theme.spacing.md,
-    },
-    signOutButton: {
-        marginTop: theme.spacing.lg,
-    },
-    signOutText: {
-        fontSize: theme.fontSize.md,
+    identityName: {
+        fontSize: theme.fontSize.lg,
         fontWeight: theme.fontWeight.semibold,
-        color: theme.colors.error,
+        color: theme.colors.text,
+        marginBottom: 3,
+    },
+    identityPrompt: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textTertiary,
+    },
+    bmiBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+    },
+    bmiDot: {
+        width: 7,
+        height: 7,
+        borderRadius: theme.borderRadius.full,
+    },
+    bmiText: {
+        fontSize: theme.fontSize.sm,
+        color: theme.colors.textSecondary,
     },
 });

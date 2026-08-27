@@ -151,6 +151,14 @@ export const EditIcon = (props) => (
     </Base>
 );
 
+export const LogoutIcon = ({ color = '#0F172A', ...props }) => (
+    <Base color={color} {...props}>
+        <Path d="M14 7.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1.5" />
+        <Path d="M9.5 12H20.5" />
+        <Path d="m17 8.5 3.5 3.5-3.5 3.5" />
+    </Base>
+);
+
 export const CheckIcon = (props) => (
     <Base {...props}>
         <Path d="m5 12.5 4.5 4.5L19 7.5" />
@@ -160,6 +168,12 @@ export const CheckIcon = (props) => (
 export const ChevronLeftIcon = (props) => (
     <Base {...props}>
         <Path d="m14.5 5.5-6.5 6.5 6.5 6.5" />
+    </Base>
+);
+
+export const ChevronRightIcon = (props) => (
+    <Base {...props}>
+        <Path d="m9.5 5.5 6.5 6.5-6.5 6.5" />
     </Base>
 );
 

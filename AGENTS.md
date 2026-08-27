@@ -27,9 +27,11 @@ npx expo start --clear       # dev server (use --clear after dep changes)
 npx expo start --ios         # run on iOS simulator
 npx expo start --android     # run on Android emulator
 npx expo export --platform ios --output-dir /tmp/kalorie-export   # bundle smoke-test (no device needed)
+npm test                     # run all Jest tests
+npx jest bmiCalculator       # run a single suite by name substring
 ```
 
-There are **no tests and no linter configured**. Minimum verification: run the `expo export` command above (catches import/syntax errors), then run the app in a simulator.
+Tests use `jest` + `jest-expo` (config in `package.json`). One suite per feature under `src/**/__tests__/`; Supabase/Gemini/FileSystem are mocked — no network or `.env` needed to run them. There is **no linter configured**; minimum manual verification: `npm test`, then the `expo export` command above (catches import/syntax errors), then run the app in a simulator.
 
 ## Environment Setup
 
@@ -43,7 +45,7 @@ EXPO_PUBLIC_GEMINI_API_KEY=...
 
 Note: `supabase.js` throws at import time if the Supabase vars are missing.
 
-Database migrations live in `database/` and must be run manually in the Supabase SQL editor **in filename order** (schema → create_meals → add_macros → add_phone → add_email_verified → **add_preferences**: gender/activity_level columns used by the Nutrition setup form). Tables use Row Level Security keyed on `auth.uid()`.
+Database migrations live in `database/` and must be run manually in the Supabase SQL editor **in filename order** (schema → create_meals → add_macros → add_phone → add_email_verified → **add_preferences** → **add_accounts**: moves email/phone_number/email_verified out of profiles into a new `accounts` table; signup trigger now creates both rows → **add_is_pro**: `accounts.is_monthly_pro` / `is_yearly_pro` flags for future pro customers). Tables use Row Level Security keyed on `auth.uid()`.
 
 ## Architecture
 
