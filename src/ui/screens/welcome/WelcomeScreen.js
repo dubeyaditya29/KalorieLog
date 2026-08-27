@@ -2,45 +2,46 @@ import React, { useRef, useState } from 'react';
 import {
     View,
     Text,
-    StyleSheet,
     ScrollView,
     TouchableOpacity,
     Dimensions,
     SafeAreaView,
 } from 'react-native';
-import { theme } from '../../styles/theme';
+import { useThemedStyles } from '../../styles/useThemedStyles';
 import { SnapIllustration, TargetsIllustration, ChatIllustration } from '../../components/illustrations';
-import { ChevronLeftIcon } from '../../components/icons';
+import { ChevronLeftIcon, KyraLogo } from '../../components/icons';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 
 const { width } = Dimensions.get('window');
 
-const SLIDES = [
-    {
-        key: 'snap',
-        title: 'Log meals with a snap',
-        body: 'Point your camera at any plate. AI reads the calories, protein, carbs and fat for you — no searching food databases.',
-        Illustration: SnapIllustration,
-        accent: theme.colors.primary,
-    },
-    {
-        key: 'targets',
-        title: 'Targets made for your body',
-        body: 'Tell us your age, height and weight — in kg or lb, cm or inches. We turn your BMI into daily calorie and macro goals.',
-        Illustration: TargetsIllustration,
-        accent: theme.colors.lunch,
-    },
-    {
-        key: 'chat',
-        title: 'A nutritionist in your pocket',
-        body: 'Ask anything, anytime. Your assistant knows your goals and helps you choose smarter meals throughout the day.',
-        Illustration: ChatIllustration,
-        accent: theme.colors.dinner,
-    },
-];
-
 export const WelcomeScreen = ({ onFinish }) => {
+    const { theme, styles } = useThemedStyles(createStyles);
     const scrollRef = useRef(null);
     const [index, setIndex] = useState(0);
+
+    const SLIDES = [
+        {
+            key: 'snap',
+            title: 'Log meals with a snap',
+            body: 'Point your camera at any plate. AI reads the calories, protein, carbs and fat for you — no searching food databases.',
+            Illustration: SnapIllustration,
+            accent: theme.colors.primary,
+        },
+        {
+            key: 'targets',
+            title: 'Targets made for your body',
+            body: 'Tell us your age, height and weight — in kg or lb, cm or inches. We turn your BMI into daily calorie and macro goals.',
+            Illustration: TargetsIllustration,
+            accent: theme.colors.lunch,
+        },
+        {
+            key: 'chat',
+            title: 'A nutritionist in your pocket',
+            body: 'Ask anything, anytime. Your assistant knows your goals and helps you choose smarter meals throughout the day.',
+            Illustration: ChatIllustration,
+            accent: theme.colors.dinner,
+        },
+    ];
 
     const isLast = index === SLIDES.length - 1;
 
@@ -58,6 +59,7 @@ export const WelcomeScreen = ({ onFinish }) => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
+            <ScreenHeader />
             <ScrollView
                 ref={scrollRef}
                 horizontal
@@ -72,6 +74,7 @@ export const WelcomeScreen = ({ onFinish }) => {
                     <View key={key} style={styles.slide}>
                         <View style={[styles.artCard, { backgroundColor: `${accent}0D` }]}>
                             <View style={[styles.artBadge, { backgroundColor: `${accent}1A` }]}>
+                                <KyraLogo size={16} color={accent} />
                                 <Text style={[styles.artBadgeText, { color: accent }]}>Kyra</Text>
                             </View>
                             <Illustration size={width * 0.78} />
@@ -116,7 +119,7 @@ export const WelcomeScreen = ({ onFinish }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => ({
     safeArea: {
         flex: 1,
         backgroundColor: theme.colors.background,
@@ -140,6 +143,9 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: theme.spacing.md,
         left: theme.spacing.md,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
         paddingHorizontal: theme.spacing.sm + 2,
         paddingVertical: 5,
         borderRadius: theme.borderRadius.full,

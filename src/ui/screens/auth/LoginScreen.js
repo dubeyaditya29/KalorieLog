@@ -1,20 +1,18 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     View,
     Text,
     TextInput,
     TouchableOpacity,
-    StyleSheet,
-    SafeAreaView,
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
-    Image,
     Animated,
     Modal,
 } from 'react-native';
-import { theme } from '../../styles/theme';
-import { globalStyles } from '../../styles/globalStyles';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useThemedStyles } from '../../styles/useThemedStyles';
 import {
     signInWithEmail,
     signUpWithEmail,
@@ -25,7 +23,10 @@ import {
     AUTH_MESSAGES,
     getAuthErrorMessage
 } from '../../../logic/constants/messages';
-import { logoIcon } from '../../assets';
+import { KyraLogo } from '../../components/icons';
+import { ThemeToggle } from '../../components/common/ScreenHeader';
+
+const HAS_SIGNED_IN_KEY = '@kyra_has_signed_in';
 
 // Flow states
 const FLOW_STATES = {
@@ -36,7 +37,7 @@ const FLOW_STATES = {
 };
 
 // Custom themed modal component
-const ThemedModal = ({ visible, title, message, buttons, onClose }) => {
+const ThemedModal = ({ visible, title, message, buttons, onClose, modalStyles }) => {
     return (
         <Modal
             visible={visible}
@@ -77,7 +78,7 @@ const ThemedModal = ({ visible, title, message, buttons, onClose }) => {
     );
 };
 
-const modalStyles = StyleSheet.create({
+const createModalStyles = (theme) => ({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
@@ -144,14 +145,16 @@ const isValidEmail = (email) => {
 };
 
 export const LoginScreen = ({ navigation }) => {
+    const { theme, styles, globalStyles } = useThemedStyles(createStyles);
+    const { styles: modalStyles } = useThemedStyles(createModalStyles);
+    const insets = useSafeAreaInsets();
     const [flowState, setFlowState] = useState(FLOW_STATES.LOGIN);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [phoneNumber, setPhoneNumber] = useState('');
     const [loading, setLoading] = useState(false);
+    const [hasSignedInBefore, setHasSignedInBefore] = useState(false);
 
     // Modal state
     const [modalVisible, setModalVisible] = useState(false);
@@ -163,6 +166,17 @@ export const LoginScreen = ({ navigation }) => {
 
     // Animation values
     const fadeAnim = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        AsyncStorage.getItem(HAS_SIGNED_IN_KEY)
+            .then((value) => setHasSignedInBefore(value === 'true'))
+            .catch(() => {});
+    }, []);
+
+    const markHasSignedIn = () => {
+        setHasSignedInBefore(true);
+        AsyncStorage.setItem(HAS_SIGNED_IN_KEY, 'true').catch(() => {});
+    };
 
     // Show themed modal
     const showModal = (title, message, buttons = [{ text: 'OK', primary: true }]) => {
@@ -229,6 +243,7 @@ export const LoginScreen = ({ navigation }) => {
 
             // AuthContext will handle navigation
             console.log('Login successful');
+            markHasSignedIn();
         } catch (error) {
             const errorInfo = getAuthErrorMessage(error);
             showModal(errorInfo.title, errorInfo.message);
@@ -277,6 +292,8 @@ export const LoginScreen = ({ navigation }) => {
                 }
                 return;
             }
+
+            markHasSignedIn();
 
             // Auto-login after signup
             const { data: loginData, error: loginError } = await signInWithEmail(email, password);
@@ -395,76 +412,45 @@ export const LoginScreen = ({ navigation }) => {
                 {/* Email Input */}
                 <View style={styles.inputContainer}>
                     <Text style={styles.label}>Email Address</Text>
-                    <View style={styles.inputWrapper}>
-                        <TextInput
-                            style={[styles.input, styles.inputWithIcon]}
-                            placeholder="your@email.com"
-                            placeholderTextColor={theme.colors.textTertiary}
-                            value={email}
-                            onChangeText={setEmail}
-                            autoCapitalize="none"
-                            keyboardType="email-address"
-                            autoComplete="email"
-                        />
-                        {email.length > 0 && (
-                            <View style={styles.validationIcon}>
-                                {emailIsValid ? (
-                                    <Text style={styles.validIcon}>✓</Text>
-                                ) : (
-                                    <Text style={styles.invalidIcon}>✗</Text>
-                                )}
-                            </View>
-                        )}
-                    </View>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="your@email.com"
+                        placeholderTextColor={theme.colors.textTertiary}
+                        value={email}
+                        onChangeText={setEmail}
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                        autoComplete="email"
+                    />
                 </View>
 
                 {/* Password Input */}
                 <View style={styles.inputContainer}>
                     <Text style={styles.label}>Password</Text>
-                    <View style={styles.inputWrapper}>
-                        <TextInput
-                            style={[styles.input, styles.inputWithIcon]}
-                            placeholder="••••••••"
-                            placeholderTextColor={theme.colors.textTertiary}
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry={!showPassword}
-                            autoComplete="password"
-                        />
-                        <TouchableOpacity
-                            style={styles.eyeIcon}
-                            onPress={() => setShowPassword(!showPassword)}
-                        >
-                            <Text style={styles.eyeIconText}>
-                                {showPassword ? '👁️' : '👁️‍🗨️'}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="••••••••"
+                        placeholderTextColor={theme.colors.textTertiary}
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                        autoComplete="password"
+                    />
                 </View>
 
                 {/* Confirm Password (Sign Up only) */}
                 {isSignUp && (
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>Confirm Password</Text>
-                        <View style={styles.inputWrapper}>
-                            <TextInput
-                                style={[styles.input, styles.inputWithIcon]}
-                                placeholder="••••••••"
-                                placeholderTextColor={theme.colors.textTertiary}
-                                value={confirmPassword}
-                                onChangeText={setConfirmPassword}
-                                secureTextEntry={!showConfirmPassword}
-                                autoComplete="password"
-                            />
-                            <TouchableOpacity
-                                style={styles.eyeIcon}
-                                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                            >
-                                <Text style={styles.eyeIconText}>
-                                    {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="••••••••"
+                            placeholderTextColor={theme.colors.textTertiary}
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            secureTextEntry
+                            autoComplete="password"
+                        />
                     </View>
                 )}
 
@@ -518,28 +504,17 @@ export const LoginScreen = ({ navigation }) => {
 
             <View style={styles.inputContainer}>
                 <Text style={styles.label}>Email Address</Text>
-                <View style={styles.inputWrapper}>
-                    <TextInput
-                        style={[styles.input, styles.inputWithIcon]}
-                        placeholder="your@email.com"
-                        placeholderTextColor={theme.colors.textTertiary}
-                        value={email}
-                        onChangeText={setEmail}
-                        autoCapitalize="none"
-                        keyboardType="email-address"
-                        autoComplete="email"
-                        autoFocus
-                    />
-                    {email.length > 0 && (
-                        <View style={styles.validationIcon}>
-                            {emailIsValid ? (
-                                <Text style={styles.validIcon}>✓</Text>
-                            ) : (
-                                <Text style={styles.invalidIcon}>✗</Text>
-                            )}
-                        </View>
-                    )}
-                </View>
+                <TextInput
+                    style={styles.input}
+                    placeholder="your@email.com"
+                    placeholderTextColor={theme.colors.textTertiary}
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    autoComplete="email"
+                    autoFocus
+                />
             </View>
 
             <TouchableOpacity
@@ -620,18 +595,21 @@ export const LoginScreen = ({ navigation }) => {
     const getSubtitle = () => {
         switch (flowState) {
             case FLOW_STATES.SIGNUP:
-                return 'Create your account';
+                return 'Nice to meet you';
             case FLOW_STATES.FORGOT_PASSWORD:
                 return "We'll help you recover";
             case FLOW_STATES.FORGOT_EMAIL:
                 return "Let's find your account";
             default:
-                return 'Welcome back';
+                return hasSignedInBefore ? 'Welcome back' : "Let's get started";
         }
     };
 
     return (
-        <SafeAreaView style={globalStyles.safeArea}>
+        <SafeAreaView style={globalStyles.safeArea} edges={['bottom', 'left', 'right']}>
+            <View style={[styles.themeBar, { paddingTop: insets.top + 12 }]}>
+                <ThemeToggle />
+            </View>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.container}
@@ -639,7 +617,9 @@ export const LoginScreen = ({ navigation }) => {
                 <View style={styles.content}>
                     {/* Logo/Title */}
                     <View style={styles.header}>
-                        <Image source={logoIcon} style={styles.logo} />
+                        <View style={styles.logo}>
+                            <KyraLogo size={90} color={theme.colors.primary} />
+                        </View>
                         <View style={styles.titleContainer}>
                             <Text style={styles.titleK}>K</Text>
                             <Text style={styles.titleAlorie}>yra</Text>
@@ -662,12 +642,18 @@ export const LoginScreen = ({ navigation }) => {
                 message={modalConfig.message}
                 buttons={modalConfig.buttons}
                 onClose={() => setModalVisible(false)}
+                modalStyles={modalStyles}
             />
         </SafeAreaView>
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => ({
+    themeBar: {
+        alignItems: 'flex-end',
+        paddingRight: 16,
+        paddingBottom: 8,
+    },
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
@@ -682,10 +668,7 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.xxl,
     },
     logo: {
-        width: 90,
-        height: 90,
         marginBottom: theme.spacing.lg,
-        tintColor: theme.colors.primary,
     },
     titleContainer: {
         flexDirection: 'row',
@@ -742,9 +725,6 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
-    inputWrapper: {
-        position: 'relative',
-    },
     input: {
         backgroundColor: theme.colors.backgroundSecondary,
         borderRadius: theme.borderRadius.md,
@@ -753,39 +733,6 @@ const styles = StyleSheet.create({
         color: theme.colors.text,
         borderWidth: 1,
         borderColor: theme.colors.border,
-    },
-    inputWithIcon: {
-        paddingRight: 50,
-    },
-    validationIcon: {
-        position: 'absolute',
-        right: 16,
-        top: 0,
-        bottom: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    validIcon: {
-        fontSize: 20,
-        color: theme.colors.success,
-        fontWeight: theme.fontWeight.bold,
-    },
-    invalidIcon: {
-        fontSize: 20,
-        color: theme.colors.error,
-        fontWeight: theme.fontWeight.bold,
-    },
-    eyeIcon: {
-        position: 'absolute',
-        right: 12,
-        top: 0,
-        bottom: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 4,
-    },
-    eyeIconText: {
-        fontSize: 18,
     },
     authButton: {
         marginTop: theme.spacing.md,

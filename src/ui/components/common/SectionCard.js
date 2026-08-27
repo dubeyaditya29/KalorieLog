@@ -1,19 +1,21 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { theme } from '../../styles/theme';
+import { View, Text } from 'react-native';
+import { useThemedStyles } from '../../styles/useThemedStyles';
 
 /**
  * Grouped settings card with an optional uppercase section title.
- * Children are rendered inside the card (usually SettingsRow items).
  */
-export const SectionCard = ({ title, children }) => (
-    <View style={styles.wrapper}>
-        {title ? <Text style={styles.title}>{title}</Text> : null}
-        <View style={styles.card}>{children}</View>
-    </View>
-);
+export const SectionCard = ({ title, children }) => {
+    const { styles } = useThemedStyles(createStyles);
+    return (
+        <View style={styles.wrapper}>
+            {title ? <Text style={styles.title}>{title}</Text> : null}
+            <View style={styles.card}>{children}</View>
+        </View>
+    );
+};
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => ({
     wrapper: {
         marginBottom: theme.spacing.lg,
     },

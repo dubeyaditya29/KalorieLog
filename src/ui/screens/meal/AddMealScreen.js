@@ -8,15 +8,17 @@ import {
     TextInput,
     SafeAreaView,
     KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { theme, getMealTypeColor } from '../../styles/theme';
-import { globalStyles } from '../../styles/globalStyles';
+import { getMealTypeColor } from '../../styles/theme';
+import { useThemedStyles } from '../../styles/useThemedStyles';
 import { useAuth } from '../../../logic/contexts/AuthContext';
 import { analyzeFoodImage } from '../../../logic/services/api/geminiService';
 import { saveMeal } from '../../../logic/services/storageService';
 import { useModal, AnalysisLoader } from '../../components';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 import {
     CameraIcon,
     ImageIcon,
@@ -31,6 +33,7 @@ import { getTodaysMeals } from '../../../logic/services/storageService';
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'];
 
 export const AddMealScreen = ({ navigation, route }) => {
+    const { theme, styles, globalStyles } = useThemedStyles(createStyles);
     const { showAlert } = useModal();
     const { user } = useAuth();
 
@@ -169,6 +172,7 @@ export const AddMealScreen = ({ navigation, route }) => {
     if (stage === 'capture') {
         return (
             <SafeAreaView style={globalStyles.safeArea}>
+                <ScreenHeader />
                 <View style={styles.captureContainer}>
                     <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
                         <CloseIcon size={15} color={theme.colors.textSecondary} strokeWidth={2.2} />
@@ -202,7 +206,7 @@ export const AddMealScreen = ({ navigation, route }) => {
                                 key={type}
                                 style={[
                                     styles.typeChip,
-                                    selectedMealType === type && { backgroundColor: getMealTypeColor(type), borderColor: getMealTypeColor(type) },
+                                    selectedMealType === type && { backgroundColor: getMealTypeColor(type, theme.colors), borderColor: getMealTypeColor(type, theme.colors) },
                                 ]}
                                 onPress={() => setSelectedMealType(type)}
                             >
@@ -226,6 +230,7 @@ export const AddMealScreen = ({ navigation, route }) => {
     if (stage === 'analyzing') {
         return (
             <SafeAreaView style={globalStyles.safeArea}>
+                <ScreenHeader />
                 <View style={styles.analyzingContainer}>
                     {imageUri && (
                         <Image source={{ uri: imageUri }} style={styles.analyzingPreview} contentFit="cover" />
@@ -244,9 +249,11 @@ export const AddMealScreen = ({ navigation, route }) => {
 
     return (
         <SafeAreaView style={globalStyles.safeArea}>
+            <ScreenHeader />
             <KeyboardAvoidingView
                 style={styles.flex1}
-                behavior="padding"
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
             >
                 <ScrollView
                     style={styles.container}
@@ -284,10 +291,10 @@ export const AddMealScreen = ({ navigation, route }) => {
                     {/* Editable macros */}
                     <Text style={styles.sectionLabel}>Detected by AI — tap to edit</Text>
                     <View style={styles.macroGrid}>
-                        <MacroInput label="Calories" value={calories} onChange={setCalories} color={theme.colors.primary} />
-                        <MacroInput label="Protein (g)" value={protein} onChange={setProtein} color={theme.colors.lunch} />
-                        <MacroInput label="Carbs (g)" value={carbs} onChange={setCarbs} color={theme.colors.amber} />
-                        <MacroInput label="Fat (g)" value={fat} onChange={setFat} color={theme.colors.error} />
+                        <MacroInput styles={styles} theme={theme} label="Calories" value={calories} onChange={setCalories} color={theme.colors.primary} />
+                        <MacroInput styles={styles} theme={theme} label="Protein (g)" value={protein} onChange={setProtein} color={theme.colors.lunch} />
+                        <MacroInput styles={styles} theme={theme} label="Carbs (g)" value={carbs} onChange={setCarbs} color={theme.colors.amber} />
+                        <MacroInput styles={styles} theme={theme} label="Fat (g)" value={fat} onChange={setFat} color={theme.colors.error} />
                     </View>
 
                     {/* Description */}
@@ -319,7 +326,7 @@ export const AddMealScreen = ({ navigation, route }) => {
                                 key={type}
                                 style={[
                                     styles.typeChipSmall,
-                                    selectedMealType === type && { backgroundColor: getMealTypeColor(type), borderColor: getMealTypeColor(type) },
+                                    selectedMealType === type && { backgroundColor: getMealTypeColor(type, theme.colors), borderColor: getMealTypeColor(type, theme.colors) },
                                 ]}
                                 onPress={() => setSelectedMealType(type)}
                             >
@@ -348,7 +355,7 @@ export const AddMealScreen = ({ navigation, route }) => {
     );
 };
 
-const MacroInput = ({ label, value, onChange, color }) => (
+const MacroInput = ({ styles, theme, label, value, onChange, color }) => (
     <View style={styles.macroInputCard}>
         <View style={[styles.macroInputDot, { backgroundColor: color }]} />
         <Text style={styles.macroInputLabel}>{label}</Text>
@@ -363,7 +370,7 @@ const MacroInput = ({ label, value, onChange, color }) => (
     </View>
 );
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => ({
     flex1: { flex: 1 },
 
     // Capture

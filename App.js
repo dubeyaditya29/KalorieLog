@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { AuthProvider, useAuth } from './src/logic/contexts/AuthContext';
-import { theme } from './src/ui/styles/theme';
+import { ThemeProvider, useTheme } from './src/ui/styles/ThemeContext';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-// Screens
 import { LoginScreen } from './src/ui/screens/auth/LoginScreen';
 import { WelcomeScreen } from './src/ui/screens/welcome/WelcomeScreen';
 import { NutritionScreen } from './src/ui/screens/nutrition/NutritionScreen';
@@ -17,22 +17,24 @@ import { ProfileScreen } from './src/ui/screens/profile/ProfileScreen';
 import { EditProfileScreen } from './src/ui/screens/profile/EditProfileScreen';
 import { AddMealScreen } from './src/ui/screens/meal/AddMealScreen';
 
-// Modal Provider
 import { ModalProvider } from './src/ui/components/common/ThemedModal';
 import { NutritionIcon, ChatIcon, ProfileIcon } from './src/ui/components/icons';
+import { BrandMark } from './src/ui/components/common/ScreenHeader';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const ONBOARDING_KEY = '@kyra_welcome_seen';
 
-const TabIcon = ({ focused, Icon }) => (
-  <View style={[styles.tabIconWrap, focused && styles.tabIconWrapActive]}>
+const TabIcon = ({ focused, Icon, theme }) => (
+  <View style={[styles.tabIconWrap, focused && { backgroundColor: theme.colors.primarySoft }]}>
     <Icon size={19} color={focused ? theme.colors.primary : theme.colors.textTertiary} strokeWidth={focused ? 2 : 1.8} />
   </View>
 );
 
 function MainTabs() {
+  const { theme } = useTheme();
+
   return (
     <Tab.Navigator
       initialRouteName="Chat"
@@ -41,9 +43,13 @@ function MainTabs() {
           backgroundColor: theme.colors.background,
         },
         headerTintColor: theme.colors.text,
+        headerShadowVisible: false,
         headerTitleStyle: {
           fontWeight: theme.fontWeight.bold,
         },
+        headerTitleAlign: 'center',
+        headerTitle: () => <BrandMark size={28} />,
+        tabBarHideOnKeyboard: true,
         tabBarStyle: {
           backgroundColor: theme.colors.background,
           borderTopColor: theme.colors.border,
@@ -65,27 +71,24 @@ function MainTabs() {
         name="Chat"
         component={ChatScreen}
         options={{
-          title: 'Assistant',
-          tabBarLabel: 'Assistant',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={ChatIcon} />,
+          tabBarLabel: 'Kyra',
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={ChatIcon} theme={theme} />,
         }}
       />
       <Tab.Screen
         name="Nutrition"
         component={NutritionScreen}
         options={{
-          title: 'Kyra',
           tabBarLabel: 'Nutrition',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={NutritionIcon} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={NutritionIcon} theme={theme} />,
         }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={{
-          title: 'Profile',
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={ProfileIcon} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={ProfileIcon} theme={theme} />,
         }}
       />
     </Tab.Navigator>
@@ -94,6 +97,7 @@ function MainTabs() {
 
 function Navigation() {
   const { user, loading } = useAuth();
+  const { theme, isDark } = useTheme();
   const [welcomeSeen, setWelcomeSeen] = useState(null);
 
   useEffect(() => {
@@ -107,19 +111,33 @@ function Navigation() {
     AsyncStorage.setItem(ONBOARDING_KEY, 'true').catch(() => {});
   };
 
+  const navTheme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      primary: theme.colors.primary,
+      background: theme.colors.background,
+      card: theme.colors.background,
+      text: theme.colors.text,
+      border: theme.colors.border,
+      notification: theme.colors.primary,
+    },
+  };
+
   if (loading || welcomeSeen === null) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
+          contentStyle: { backgroundColor: theme.colors.background },
         }}
       >
         {!user ? (
@@ -148,14 +166,25 @@ function Navigation() {
   );
 }
 
-export default function App() {
+function ThemedRoot() {
+  const { isDark } = useTheme();
   return (
     <AuthProvider>
       <ModalProvider>
-        <StatusBar style="dark" />
+        <StatusBar style={isDark ? 'light' : 'dark'} />
         <Navigation />
       </ModalProvider>
     </AuthProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <ThemedRoot />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -164,7 +193,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
   },
   tabIconWrap: {
     width: 44,
@@ -172,8 +200,5 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  tabIconWrapActive: {
-    backgroundColor: theme.colors.primarySoft,
   },
 });

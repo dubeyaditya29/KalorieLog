@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { theme, getMealTypeColor } from '../../styles/theme';
+import { useThemedStyles } from '../../styles/useThemedStyles';
 import { deleteMeal } from '../../../logic/services/storageService';
 import { useModal } from '../common/ThemedModal';
 
 export const MealCard = ({ meal, onDelete }) => {
+    const { styles } = useThemedStyles(createStyles);
     const { showAlert, showDestructive } = useModal();
 
     const handleDelete = () => {
@@ -77,7 +78,7 @@ export const MealCard = ({ meal, onDelete }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => ({
     card: {
         backgroundColor: theme.colors.backgroundTertiary,
         borderRadius: theme.borderRadius.md,
