@@ -17,7 +17,7 @@ import { useThemedStyles } from '../../styles/useThemedStyles';
 import { useAuth } from '../../../logic/contexts/AuthContext';
 import { analyzeFoodImage } from '../../../logic/services/api/geminiService';
 import { saveMeal } from '../../../logic/services/storageService';
-import { useModal, AnalysisLoader } from '../../components';
+import { useModal, AnalysisLoader, DidYouKnowRotator } from '../../components';
 import { ScreenHeader } from '../../components/common/ScreenHeader';
 import {
     CameraIcon,
@@ -79,9 +79,8 @@ export const AddMealScreen = ({ navigation, route }) => {
         try {
             const options = {
                 mediaTypes: ['images'],
-                allowsEditing: true,
-                aspect: [4, 3],
-                quality: 0.5,
+                allowsEditing: false,
+                quality: 0.7,
                 exif: false,
             };
 
@@ -231,15 +230,16 @@ export const AddMealScreen = ({ navigation, route }) => {
         return (
             <SafeAreaView style={globalStyles.safeArea}>
                 <ScreenHeader />
-                <View style={styles.analyzingContainer}>
+                <ScrollView
+                    contentContainerStyle={styles.analyzingContainer}
+                    keyboardShouldPersistTaps="handled"
+                >
                     {imageUri && (
                         <Image source={{ uri: imageUri }} style={styles.analyzingPreview} contentFit="cover" />
                     )}
                     <AnalysisLoader size={150} label="Reading your plate…" />
-                    <Text style={styles.analyzingHint}>
-                        Estimating calories, protein, carbs and fat with AI
-                    </Text>
-                </View>
+                    <DidYouKnowRotator />
+                </ScrollView>
             </SafeAreaView>
         );
     }
@@ -480,23 +480,18 @@ const createStyles = (theme) => ({
 
     // Analyzing
     analyzingContainer: {
-        flex: 1,
+        flexGrow: 1,
         backgroundColor: theme.colors.background,
         alignItems: 'center',
         justifyContent: 'center',
         padding: theme.spacing.lg,
+        paddingBottom: theme.spacing.xxl,
     },
     analyzingPreview: {
         width: '100%',
-        height: 220,
+        height: 180,
         borderRadius: theme.borderRadius.lg,
-        marginBottom: theme.spacing.lg,
-    },
-    analyzingHint: {
-        fontSize: theme.fontSize.sm,
-        color: theme.colors.textTertiary,
-        marginTop: theme.spacing.sm,
-        textAlign: 'center',
+        marginBottom: theme.spacing.md,
     },
 
     // Review

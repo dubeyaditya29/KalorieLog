@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Kyra",
-    "slug": "kyra",
+    "slug": "kalorieLog",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -27,7 +27,17 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "Kyra",
+      "shortName": "Kyra",
+      "description": "Your personal health companion",
+      "themeColor": "#007AFF",
+      "backgroundColor": "#ffffff",
+      "display": "standalone",
+      "orientation": "portrait",
+      "startUrl": "/"
     },
     "plugins": [
       [

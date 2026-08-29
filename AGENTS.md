@@ -4,7 +4,7 @@ Guidance for AI agents (and humans) working on this repository.
 
 ## Project Overview
 
-**Kyra** (npm name: `kyra`, formerly KalorieLog) — *"your personal health companion."* An AI-powered calorie & macronutrient tracking app for iOS/Android built with React Native + Expo. Users photograph their food, Google Gemini estimates calories/macros, meals are stored in Supabase (PostgreSQL), and **Kyra**, the Gemini-powered in-chat assistant, answers nutrition questions.
+**Kyra** (npm name: `kyra`, formerly KalorieLog) — *"your personal health companion."* An AI-powered calorie & macronutrient tracking app for iOS/Android (and an installable web PWA) built with React Native + Expo. Users photograph their food, Google Gemini estimates calories/macros, meals are stored in Supabase (PostgreSQL), and **Kyra**, the Gemini-powered in-chat assistant, answers nutrition questions.
 
 **Design language**: clean white + blue light theme (`theme.js` is the single source of truth — never hardcode colors).
 
@@ -12,7 +12,7 @@ Guidance for AI agents (and humans) working on this repository.
 
 | Layer | Technology |
 |-------|------------|
-| Framework | React Native 0.81 + Expo SDK 54 |
+| Framework | React Native 0.81 + Expo SDK 54 (`react-native-web` for PWA) |
 | Navigation | React Navigation v7 (`bottom-tabs` + `native-stack`) |
 | Backend | Supabase (Postgres + Auth + RLS) |
 | AI | Google Gemini (`gemini-2.5-flash`) via `@google/generative-ai` |
@@ -26,6 +26,8 @@ npm install                  # install dependencies
 npx expo start --clear       # dev server (use --clear after dep changes)
 npx expo start --ios         # run on iOS simulator
 npx expo start --android     # run on Android emulator
+npx expo start --web         # run in the browser (local PWA)
+npx expo export --platform web   # static `dist/` for Vercel
 npx expo export --platform ios --output-dir /tmp/kalorie-export   # bundle smoke-test (no device needed)
 npm test                     # run all Jest tests
 npx jest bmiCalculator       # run a single suite by name substring
@@ -44,6 +46,8 @@ EXPO_PUBLIC_GEMINI_API_KEY=...
 ```
 
 Note: `supabase.js` throws at import time if the Supabase vars are missing.
+
+For **Vercel** (production custom domain + Preview staging), set the same three `EXPO_PUBLIC_*` variables in the project dashboard for Production **and** Preview. They are baked in at `expo export` time — changing them requires a redeploy. Do not commit `.env`. Build command and SPA rewrite live in `vercel.json` (`npx expo export --platform web` → `dist/`). Attach the custom domain on the Production deployment. Preview URLs (`*.vercel.app`) are staging.
 
 Database migrations live in `database/` and must be run manually in the Supabase SQL editor **in filename order** (schema → create_meals → add_macros → add_phone → add_email_verified → **add_preferences** → **add_accounts**: moves email/phone_number/email_verified out of profiles into a new `accounts` table; signup trigger now creates both rows → **add_is_pro**: `accounts.is_monthly_pro` / `is_yearly_pro` flags for future pro customers). Tables use Row Level Security keyed on `auth.uid()`.
 
@@ -117,7 +121,8 @@ All UI icons are hand-drawn stroke SVGs in `src/ui/components/icons/index.js` (2
 3. Default calorie fallback of 2300 appears in a few places if suggestions can't be computed.
 4. Chat history resets when the app restarts or user navigates away (session-only by design for now).
 5. No offline support — Supabase/Gemini connectivity required.
+6. Auth sessions persist via AsyncStorage (`persistSession` + `autoRefreshToken`). Access tokens refresh in the background; set refresh-token lifetime to 3–7 days in the Supabase dashboard (Auth → Sessions) so users stay signed in across visits.
 
 ## Git Notes
 
-Remote: `https://github.com/dubeyaditya29/KalorieLog.git` (repo was renamed from `biteLog`). App identity: bundle/package `com.kyra.app`, EAS project in `app.json` (owner `adityadubey29`) with `eas.json` for APK builds. Note: changing the bundle identifier means previously installed dev builds won't receive updates — reinstall required.
+Remote: `https://github.com/dubeyaditya29/KalorieLog.git` (repo was renamed from `biteLog`). App identity: bundle/package `com.kyra.app`, EAS project in `app.json` (owner `adityadubey29`) with `eas.json` for APK builds. Note: changing the bundle identifier means previously installed dev builds won't receive updates — reinstall required. Web hosting is Vercel (`vercel.json`), not EAS Hosting.

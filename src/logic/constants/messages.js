@@ -106,6 +106,30 @@ export const GENERAL_MESSAGES = {
     },
 };
 
+/** Short health facts shown while a meal photo is being analyzed. */
+export const ANALYSIS_DID_YOU_KNOW = [
+    'Protein keeps you full longer than carbs or fat — that’s why a high-protein breakfast often reduces snacking later.',
+    'Drinking a glass of water before a meal can help you notice true hunger versus thirst.',
+    'Muscle uses more energy at rest than fat tissue, so strength training quietly raises daily calorie burn.',
+    'Fibre from vegetables, oats and beans slows digestion and steadies blood sugar after a meal.',
+    'Your brain is about 60% fat — omega-3s from fish, walnuts or flax help it run smoothly.',
+    'Sleeping under 7 hours can raise hunger hormones the next day, making extra calories harder to resist.',
+    'A handful of nuts (about 30g) is filling, but easy to overeat if you snack straight from the bag.',
+    'Colourful plates usually mean more micronutrients. Aim for two colours besides brown or white.',
+    'Cooking at home lets you control oil and salt — restaurant meals often hide both.',
+    'Protein needs are easier to hit if you include some at every meal, not only at dinner.',
+    'Walking 10 minutes after eating can blunt a blood-sugar spike more than you might expect.',
+    'Liquid calories (juices, lattes, soda) add up fast because they don’t fill you like solid food.',
+    'Your stomach stretches: eating slowly gives fullness signals about 20 minutes to catch up.',
+    'Frozen vegetables are picked ripe and frozen quickly — they can be as nutritious as “fresh” produce that sat in transit.',
+    'Caffeine can slightly raise metabolism, but it isn’t a substitute for sleep or a balanced plate.',
+    'Strength + a calorie target works better than cardio alone if you want to keep muscle while losing fat.',
+    'Label serving sizes are often smaller than what people pour. Check the grams, not just “1 serving”.',
+    'Fermented foods like yogurt, kefir or kimchi support gut bacteria that influence digestion and mood.',
+    'Skipping meals can lead to a larger evening intake. A modest lunch usually steadies the day.',
+    'Consistency beats perfection: logging most meals teaches you more than an occasional “perfect” day.',
+];
+
 /**
  * Helper function to get user-friendly message from Supabase error
  * Maps technical errors to friendly messages

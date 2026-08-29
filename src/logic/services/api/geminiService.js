@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Platform } from 'react-native';
 import { readAsStringAsync } from 'expo-file-system/legacy';
 
 // Initialize Gemini API
@@ -18,10 +19,7 @@ export const analyzeFoodImage = async (imageUri) => {
         // Get the generative model
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-        // Convert image to base64 using Expo FileSystem
-        const base64 = await readAsStringAsync(imageUri, {
-            encoding: 'base64',
-        });
+        const base64 = await imageUriToBase64(imageUri);
 
         console.log('Image converted to base64, length:', base64.length);
 
@@ -129,6 +127,28 @@ export const chatWithNutritionist = async (history, profile = null) => {
         console.error('Chat error:', error);
         return { text: null, error };
     }
+};
+
+const imageUriToBase64 = async (imageUri) => {
+    if (Platform.OS === 'web') {
+        return readUriAsBase64(imageUri);
+    }
+    return readAsStringAsync(imageUri, {
+        encoding: 'base64',
+    });
+};
+
+const readUriAsBase64 = async (uri) => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error('Failed to read image'));
+        reader.readAsDataURL(blob);
+    });
+    const comma = String(dataUrl).indexOf(',');
+    return comma >= 0 ? String(dataUrl).slice(comma + 1) : String(dataUrl);
 };
 
 const buildSystemPrompt = (profile) => {

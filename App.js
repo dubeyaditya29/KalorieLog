@@ -19,7 +19,8 @@ import { AddMealScreen } from './src/ui/screens/meal/AddMealScreen';
 
 import { ModalProvider } from './src/ui/components/common/ThemedModal';
 import { NutritionIcon, ChatIcon, ProfileIcon } from './src/ui/components/icons';
-import { BrandMark } from './src/ui/components/common/ScreenHeader';
+import { BrandMark, ThemeToggle } from './src/ui/components/common/ScreenHeader';
+import { InstallPrompt } from './src/ui/components/common/InstallPrompt';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -49,6 +50,12 @@ function MainTabs() {
         },
         headerTitleAlign: 'center',
         headerTitle: () => <BrandMark size={28} />,
+        headerLeft: () => <View style={styles.headerSide} />,
+        headerRight: () => (
+          <View style={styles.headerSide}>
+            <ThemeToggle />
+          </View>
+        ),
         tabBarHideOnKeyboard: true,
         tabBarStyle: {
           backgroundColor: theme.colors.background,
@@ -171,8 +178,11 @@ function ThemedRoot() {
   return (
     <AuthProvider>
       <ModalProvider>
-        <StatusBar style={isDark ? 'light' : 'dark'} />
-        <Navigation />
+        <View style={{ flex: 1 }}>
+          <StatusBar style={isDark ? 'light' : 'dark'} />
+          <Navigation />
+          <InstallPrompt />
+        </View>
       </ModalProvider>
     </AuthProvider>
   );
@@ -193,6 +203,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  headerSide: {
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabIconWrap: {
     width: 44,

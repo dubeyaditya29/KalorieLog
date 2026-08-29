@@ -40,6 +40,8 @@ export const ChatScreen = () => {
     const listRef = useRef(null);
 
     useEffect(() => {
+        if (Platform.OS === 'web') return;
+
         const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
         const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
         const changeEvent = Platform.OS === 'ios' ? 'keyboardWillChangeFrame' : 'keyboardDidShow';

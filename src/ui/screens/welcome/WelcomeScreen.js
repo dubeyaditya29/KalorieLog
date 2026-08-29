@@ -1,22 +1,19 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
-    ScrollView,
     TouchableOpacity,
-    Dimensions,
-    SafeAreaView,
+    useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemedStyles } from '../../styles/useThemedStyles';
 import { SnapIllustration, TargetsIllustration, ChatIllustration } from '../../components/illustrations';
-import { ChevronLeftIcon, KyraLogo } from '../../components/icons';
+import { ChevronRightIcon, KyraLogo } from '../../components/icons';
 import { ScreenHeader } from '../../components/common/ScreenHeader';
-
-const { width } = Dimensions.get('window');
 
 export const WelcomeScreen = ({ onFinish }) => {
     const { theme, styles } = useThemedStyles(createStyles);
-    const scrollRef = useRef(null);
+    const { width } = useWindowDimensions();
     const [index, setIndex] = useState(0);
 
     const SLIDES = [
@@ -44,57 +41,48 @@ export const WelcomeScreen = ({ onFinish }) => {
     ];
 
     const isLast = index === SLIDES.length - 1;
-
-    const goTo = (i) => {
-        scrollRef.current?.scrollTo({ x: i * width, animated: true });
-    };
+    const slide = SLIDES[index];
+    const Illustration = slide.Illustration;
+    const artWidth = Math.min(width * 0.78, 340);
 
     const handlePrimary = () => {
         if (isLast) {
             onFinish?.();
-        } else {
-            goTo(index + 1);
+            return;
         }
+        setIndex((current) => Math.min(current + 1, SLIDES.length - 1));
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
             <ScreenHeader />
-            <ScrollView
-                ref={scrollRef}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onMomentumScrollEnd={(e) => {
-                    const i = Math.round(e.nativeEvent.contentOffset.x / width);
-                    if (i !== index) setIndex(i);
-                }}
-            >
-                {SLIDES.map(({ key, title, body, Illustration, accent }) => (
-                    <View key={key} style={styles.slide}>
-                        <View style={[styles.artCard, { backgroundColor: `${accent}0D` }]}>
-                            <View style={[styles.artBadge, { backgroundColor: `${accent}1A` }]}>
-                                <KyraLogo size={16} color={accent} />
-                                <Text style={[styles.artBadgeText, { color: accent }]}>Kyra</Text>
-                            </View>
-                            <Illustration size={width * 0.78} />
-                        </View>
-
-                        <Text style={styles.title}>{title}</Text>
-                        <Text style={styles.body}>{body}</Text>
+            <View style={styles.slide}>
+                <View style={[styles.artCard, { backgroundColor: `${slide.accent}0D` }]}>
+                    <View style={[styles.artBadge, { backgroundColor: `${slide.accent}1A` }]}>
+                        <KyraLogo size={16} color={slide.accent} />
+                        <Text style={[styles.artBadgeText, { color: slide.accent }]}>Kyra</Text>
                     </View>
-                ))}
-            </ScrollView>
+                    <Illustration size={artWidth} />
+                </View>
+
+                <Text style={styles.title}>{slide.title}</Text>
+                <Text style={styles.body}>{slide.body}</Text>
+            </View>
 
             <View style={styles.controls}>
-                <TouchableOpacity onPress={() => goTo(SLIDES.length - 1)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                <TouchableOpacity
+                    onPress={() => onFinish?.()}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Skip welcome"
+                >
                     <Text style={styles.skipText}>{isLast ? '' : 'Skip'}</Text>
                 </TouchableOpacity>
 
                 <View style={styles.dots}>
-                    {SLIDES.map((slide, i) => (
+                    {SLIDES.map((item, i) => (
                         <View
-                            key={slide.key}
+                            key={item.key}
                             style={[
                                 styles.dot,
                                 i === index && [styles.dotActive, { backgroundColor: SLIDES[i].accent }],
@@ -107,11 +95,13 @@ export const WelcomeScreen = ({ onFinish }) => {
                     style={[styles.nextButton, isLast && styles.nextButtonLast]}
                     onPress={handlePrimary}
                     activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel={isLast ? 'Get started' : 'Next'}
                 >
                     {isLast ? (
                         <Text style={styles.getStartedText}>Get Started</Text>
                     ) : (
-                        <ChevronLeftIcon size={18} color={theme.colors.white} strokeWidth={2.4} style={{ transform: [{ rotate: '180deg' }] }} />
+                        <ChevronRightIcon size={18} color={theme.colors.white} strokeWidth={2.4} />
                     )}
                 </TouchableOpacity>
             </View>
@@ -125,7 +115,6 @@ const createStyles = (theme) => ({
         backgroundColor: theme.colors.background,
     },
     slide: {
-        width,
         flex: 1,
         alignItems: 'center',
         paddingHorizontal: theme.spacing.xl,
@@ -177,6 +166,7 @@ const createStyles = (theme) => ({
         paddingHorizontal: theme.spacing.xl,
         paddingBottom: theme.spacing.lg,
         paddingTop: theme.spacing.md,
+        zIndex: 2,
     },
     skipText: {
         fontSize: theme.fontSize.md,
