@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
@@ -21,6 +21,7 @@ import { ModalProvider } from './src/ui/components/common/ThemedModal';
 import { NutritionIcon, ChatIcon, ProfileIcon } from './src/ui/components/icons';
 import { BrandMark, ThemeToggle } from './src/ui/components/common/ScreenHeader';
 import { InstallPrompt } from './src/ui/components/common/InstallPrompt';
+import { Analytics } from '@vercel/analytics/react';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -182,6 +183,7 @@ function ThemedRoot() {
           <StatusBar style={isDark ? 'light' : 'dark'} />
           <Navigation />
           <InstallPrompt />
+          {Platform.OS === 'web' ? <Analytics /> : null}
         </View>
       </ModalProvider>
     </AuthProvider>
