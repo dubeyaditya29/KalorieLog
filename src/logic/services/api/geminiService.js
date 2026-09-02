@@ -1,9 +1,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { readAsStringAsync } from 'expo-file-system/legacy';
 
-// Initialize Gemini API
-const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+const API_KEY =
+    process.env.EXPO_GEMINI_API_KEY ||
+    process.env.EXPO_PUBLIC_GEMINI_API_KEY ||
+    Constants.expoConfig?.extra?.geminiApiKey;
+
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 /**

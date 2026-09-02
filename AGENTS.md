@@ -41,13 +41,13 @@ Create `.env` in root (gitignored; see `.env.example`):
 
 ```env
 EXPO_PUBLIC_SUPABASE_URL=...
-EXPO_PUBLIC_SUPABASE_ANON_KEY=...
-EXPO_PUBLIC_GEMINI_API_KEY=...
+EXPO_SUPABASE_ANON_KEY=...
+EXPO_GEMINI_API_KEY=...
 ```
 
 Note: `supabase.js` throws at import time if the Supabase vars are missing.
 
-For **Vercel** (production custom domain + Preview staging), set the same three `EXPO_PUBLIC_*` variables in the project dashboard for Production **and** Preview. They are baked in at `expo export` time — changing them requires a redeploy. Do not commit `.env`. Build command and SPA rewrite live in `vercel.json` (`npx expo export --platform web` → `dist/`). Attach the custom domain on the Production deployment. Preview URLs (`*.vercel.app`) are staging.
+For **Vercel** (production custom domain + Preview staging), set `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_SUPABASE_ANON_KEY`, and `EXPO_GEMINI_API_KEY` (Config, not Secret) for Production **and** Preview. They are baked in at `expo export` time — changing them requires a redeploy. Do not commit `.env`. Build command and SPA rewrite live in `vercel.json` (`npx expo export --platform web` → `dist/`). Attach the custom domain on the Production deployment. Preview URLs (`*.vercel.app`) are staging.
 
 Database migrations live in `database/` and must be run manually in the Supabase SQL editor **in filename order** (schema → create_meals → add_macros → add_phone → add_email_verified → **add_preferences** → **add_accounts**: moves email/phone_number/email_verified out of profiles into a new `accounts` table; signup trigger now creates both rows → **add_is_pro**: `accounts.is_monthly_pro` / `is_yearly_pro` flags for future pro customers). Tables use Row Level Security keyed on `auth.uid()`.
 
